@@ -146,8 +146,8 @@ for i in range(len(beta)):
     for j in range(len(gamma)):
         # Solve the geodesic equations for the current (β, γ) with given initial conditions
         init_p = obs.p_init(gamma[i, j], beta[i, j])
-        geo = geodesics.Geodesics([0.99], init_q, init_p)
-        ivp = np.array([0, init_q[0], init_q[1], init_q[2], init_p[1], init_p[2]])
+        geo = geodesics.Geodesics(init_q, init_p, [0.99])
+        ivp = np.array([0, init_q[0], init_q[1], init_q[2], init_p[0], init_p[1], init_p[2], init_p[3]])
         sol = solve_ivp(geo.hamilton_eqs, [0, -30], ivp, t_eval=np.linspace(0, -30, 5000))
 
         # Temporary print statement for debugging
@@ -180,6 +180,7 @@ for i in range(len(beta)):
 image.save("test_hole.png")
 
 # TODO: да свържа пикселите с импакт параметрите
+# plt.imshow(image_data в пиксели, cmap='gray', interpolation='nearest')
 # TODO: да начертая графиката
 
 # това е да видя каква част от пикселите са минали условието за падане

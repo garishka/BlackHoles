@@ -68,7 +68,7 @@ def A_expr(r, theta, alpha):
 
 def Kerr_metric(x_vec, *params):
     """
-    TCalculate the covariant form of the Kerr metric in Boyer-Lindquist coordinates.
+    Calculate the covariant form of the Kerr metric in Boyer-Lindquist coordinates.
 
     Parameters:
     -----------
@@ -100,6 +100,40 @@ def Kerr_metric(x_vec, *params):
     return g
 
 
+def contra_Kerr_metric(x_vec, *params):
+    """
+    Calculate the contravariant form of the Kerr metric in Boyer-Lindquist coordinates.
+
+    Parameters:
+    -----------
+    x_vec : array-like
+        3-position in the form (r, θ, ϕ).
+    params : array-like, optional
+        List of parameters. By default, params[0]=α, the spin parameter.
+
+    Returns:
+    -----------
+    np.ndarray
+        A (4, 4) array representing the contravariant metric components.
+    """
+    r, th, phi = x_vec
+    alpha = params[0]
+
+    sigma = sigma_expr(r, th, alpha)
+    delta = delta_expr(r, alpha)
+    A = A_expr(r, th, alpha)
+
+    g = np.zeros(shape=(4, 4), dtype=float)
+
+    g[0, 0] = - A / (delta * sigma)
+    g[0, 3] = g[3, 0] = - 2 * r * alpha / (delta * sigma)
+    g[3, 3] = (delta - (alpha * np.sin(th) ** 2)) / (delta * sigma * np.sin(th) ** 2)
+    g[1, 1] = delta / sigma
+    g[2, 2] = 1 / sigma
+
+    return g
+
+
 class KerrBlackHole:
     """
     Represents a Kerr black hole with a specified spin parameter.
@@ -117,7 +151,7 @@ class KerrBlackHole:
     r_plus() -> float:
         Return the radius of the event horizon for the Kerr black hole with the given spin parameter.
     """
-    def __init__(self, alpha):
+    def __init__(self, alpha: float):
         """
                 Initialize a KerrBlackHole instance with the specified spin parameter.
 
@@ -175,7 +209,7 @@ class Observer:
     relevant to an observer near a rotating black hole, based on the Kerr metric in Boyer-Lindquist coordinates.
     """
 
-    def __init__(self, position=None, alpha=0.99):
+    def __init__(self, position=[15, np.pi / 2, 0], alpha=0.99):
         """
         Constructor
 
@@ -187,8 +221,8 @@ class Observer:
             Spin parameter of the black hole. Defaults to 0.99.
         """
 
-        if position is None:
-            position = [15, np.pi / 2, 0]
+        #if position is []:
+        #    position =
         self.position = position
         self.alpha = alpha
 
@@ -225,7 +259,6 @@ class Observer:
         y = r_tilde * a1
         return x, y
 
-    # TODO: проверка на началните условия
     def gamma_g(self) -> float:
         metric = Kerr_metric(self.position, self.alpha)
         return -metric[0, 3] / np.sqrt(metric[3, 3] * (metric[0, 3] ** 2 - metric[0, 0] * metric[3, 3]))
@@ -241,9 +274,9 @@ class Observer:
         Parameters:
         -----------
         a1: float
-            The angle associated with the y-axis.
-        a2: float
             The angle associated with the x-axis.
+        a2: float
+            The angle associated with the y-axis.
 
         Returns:
         -----------
@@ -255,17 +288,16 @@ class Observer:
         """
         metric = Kerr_metric(self.position, self.alpha)
 
-        p_th = np.sqrt(metric[2, 2]) * np.sin(a1)
-        p_r = np.sqrt(metric[2, 2]) * np.cos(a2) * np.cos(a1)
-        # p_phi, p_t = const for the given ray
-        p_phi = np.sin(a2) * np.cos(a1)
-        p_t = (1 + self.gamma_g() * np.sqrt(metric[3, 3]) * np.sin(a2) * np.cos(a1)) / self.zeta()
+        p_th = np.sqrt(metric[2, 2]) * np.sin(a2)
+        p_r = np.sqrt(metric[1, 1]) * np.cos(a1) * np.cos(a2)
+        L = np.sqrt(metric[3, 3]) * np.sin(a1) * np.cos(a2)
+        E = (1 + self.gamma_g() * np.sqrt(metric[3, 3]) * np.sin(a1) * np.cos(a2)) / self.zeta()
 
-        return [p_t, p_r, p_th, p_phi]
+        return [E, p_r, p_th, L]
 
 
 class Geodesics:
-    def __init__(self, metric_params, position, momentum, null=True):
+    def __init__(self,  position, momentum, metric_params=[0.99], null=True):
         """
         Constructor
 
@@ -287,7 +319,6 @@ class Geodesics:
         self.momentum = momentum
         self.null = null
 
-    # TODO: да проверя отново производните
     def dgdtheta(self):
         # Calculate and return the derivative of the geodesic components with respect to the polar angle (θ).
         alpha = self.m_params[0]
@@ -298,11 +329,11 @@ class Geodesics:
 
         dgdth = np.zeros(shape=(4, 4), dtype=float)
 
-        dgdth[0, 0] = - 2 * r * alpha * np.sin(th) ** 2 / sigma ** 2
-        dgdth[0, 3] = dgdth[3, 0] = - 2 * r * alpha * np.sin(2 * th) * (1 + (alpha * np.sin(th) ** 2) / sigma) / sigma
+        dgdth[0, 0] = 2 * r * alpha ** 2 * np.sin(2 * th) / sigma ** 2
+        dgdth[0, 3] = dgdth[3, 0] = - 4 * r * alpha * np.sin(2 * th) * (1 - (alpha * np.sin(th) ** 2) / sigma) / sigma
         dgdth[1, 1] = - alpha ** 2 * np.sin(2 * th) / delta
         dgdth[2, 2] = - alpha ** 2 * np.sin(2 * th)
-        dgdth[3, 3] = A * np.sin(2 * th) / sigma + A * np.sin(2 * th) * np.sin(th) ** 2 * alpha ** 4 / sigma
+        dgdth[3, 3] = np.sin(2 * th) * (2 * A - (r **2 + alpha ** 2) ** 2 + A * np.sin(th) ** 2 / sigma) / sigma
 
         return dgdth
 
@@ -316,53 +347,80 @@ class Geodesics:
 
         dgdr = np.zeros(shape=(4, 4), dtype=float)
 
-        dgdr[0, 0] = - 2 * (alpha ** 2 * np.cos(th) ** 2 - r ** 2) / sigma ** 2
-        dgdr[0, 3] = dgdr[3, 0] = 2 * alpha * np.sin(th) ** 2 / sigma - 4 * r ** 2 * alpha * np.sin(th) ** 2 / sigma ** 2
-        dgdr[1, 1] = 2 * r / delta - sigma * (2 * r - 2) / delta ** 2
+        dAdr = 4 * r * (r ** 2 + alpha ** 2) - 2 * (r - 1) * alpha ** 2 * np.sin(th) ** 2
+
+        dgdr[0, 0] = 2 * (1 - 2 * r ** 2 / sigma) / sigma
+        dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha * np.sin(th) ** 2 * (1 - 2 * r ** 2 / sigma) / sigma
+        dgdr[1, 1] = 2 * (r + (1 - r) * sigma / delta) / delta
         dgdr[2, 2] = 2 * r
-        dgdr[3, 3] = - 2 * A * alpha ** 2 * np.sin(th) ** 2 * r / sigma ** 2 + \
-                     (4 * (alpha ** 2 + r ** 2) * r - 2 * r + 2) * alpha ** 2 * np.sin(th) ** 2 / sigma
+        dgdr[3, 3] = np.sin(th) ** 2 * (dAdr - 2 * r * A / sigma) / sigma
 
         return dgdr
+
+    def hamiltonian(self):
+        """
+        Calculates the Hamiltonian for the geodesic motion.
+        """
+        alpha = self.m_params[0]
+        p_t, p_r, p_th, p_phi = self.momentum
+        g = contra_Kerr_metric(self.position, alpha)
+
+        # за фотони
+        tH = g[0, 0] * p_t ** 2 + g[1, 1] * p_r ** 2 + g[2, 2] * p_th ** 2 + g[0, 3] * p_phi * p_t + g[3, 3] * p_phi ** 2
+        H = tH / 2
+
+        return H
 
     # TODO: да проверя знаците на уравненията, началните условия, как се подават данните, какво как се връща
     # TODO: да проверя дали има нужда от допълнителни условия
     # TODO: да добавя начин за проверка на запазването на енергията и момента на импулса
     # това е грешно
-    def hamilton_eqs(self, l, qp):
+    def hamilton_eqs(self, l: float, qp: np.ndarray) -> np.ndarray:
         """
-            Calculate and return the Hamiltonian equations for the geodesic motion.
+        Calculate and return the Hamiltonian equations for the geodesic motion.
 
-            Parameters:
-            -----------
-            l: float
-                Affine parameter.
-            qp: np.ndarray
-                Array of positions and momenta.
-                (r, θ, ϕ, p_t, p_r, p_θ, p_ϕ)
+        Parameters:
+        -----------
+        l: float
+            Affine parameter.
+        qp: np.ndarray
+            Array of positions and momenta.
+            (t, r, θ, ϕ, p_t, p_r, p_θ, p_ϕ)
 
-            Returns:
-            -----------
-            list[float]
-                List of Hamiltonian equations for the geodesic motion.
+        Returns:
+        -----------
+        list[float]
+            List of Hamiltonian equations for the geodesic motion.
+            The equations represent the evolution of the geodesic coordinates and momenta over the affine parameter l.
         """
         p_r, p_th = self.momentum[1:3]
         alpha = self.m_params[0]
-        metric = Kerr_metric(self.position, alpha)
+        g = Kerr_metric(self.position, alpha)
         dgdth = self.dgdtheta()
         dgdr = self.dgdr()
         E = self.momentum[0]
         L = self.momentum[3]
 
-        dtdl = (E + p_th / (2 * metric[0, 3] * metric[3, 3])) / (metric[0, 0] - 1 / (4 * metric[3, 3]))
-        drdl = p_r / metric[1, 1]
-        dthdl = p_th / metric[2, 2]
-        dphidl = - (L + metric[0, 3] * dtdl / 2) / metric[3, 3]
+        dzdl = np.zeros(shape=(8), dtype=float)
 
-        dp2dl = dgdth[0, 0] * dtdl ** 2 + 2 * dgdth * dtdl * dphidl + dgdth[3, 3] * dphidl ** 2 + \
-                dgdth[1, 1] * drdl ** 2 + dgdth[2, 2] * dthdl ** 2
-        dp1dl = + dgdr[0, 0] * dtdl ** 2 + 2 * dgdr * dtdl * dphidl + dgdr[3, 3] * dphidl ** 2 + \
-                dgdr[1, 1] * drdl ** 2 + dgdr[2, 2] * dthdl ** 2
+        dzdl[0] = g[0, 0] * E + g[0, 3] * L
+        dzdl[1] = g[1, 1] * p_r
+        dzdl[2] = g[2, 2] * p_th
+        dzdl[3] = g[0, 3] * E + g[3, 3] * L
 
-        # от начина на интегриране на solve_ivp дава dp1pl и pd2pl като двумерни масиви с множество еднакви стойности
-        return [dtdl, drdl, dthdl, dphidl, dp1dl[0, 0], dp2dl[0, 0]]
+        dzdl[4] = 0
+        dzdl[5] = - 0.5 * (dgdr[0, 0] * E ** 2 + dgdr[0, 3] * E * L + dgdr[1, 1] * p_r ** 2 + dgdr[2, 2] * p_th ** 2
+                           + dgdr[3, 3] * L ** 2)
+        dzdl[6] = - 0.5 * (dgdth[0, 0] * E ** 2 + dgdth[0, 3] * E * L + dgdth[1, 1] * p_r ** 2 + dgdth[2, 2] * p_th ** 2
+                           + dgdth[3, 3] * L ** 2)
+        dzdl[7] = 0
+
+        return dzdl
+
+
+#g = Kerr_metric([15, np.pi/2, 0], 0.99)
+#print(np.linalg.det(g))
+#analytic = g[0, 0] * g[1, 1] * g[2, 2] * g[3, 3] - g[0, 3] ** 2 * g[1, 1] * g[2, 2]
+#print(analytic)
+# => дават еднакъв резултат
+

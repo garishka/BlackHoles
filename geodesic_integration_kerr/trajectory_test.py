@@ -2,34 +2,35 @@ import numpy as np
 from scipy.integrate import solve_ivp
 import time
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import geodesics
 
-beta_values = np.linspace(-np.pi/2, np.pi/2, 400)
-gamma_values = np.linspace(-np.pi/2, np.pi/2, 400)
+beta_values = np.linspace(np.pi/2, -np.pi/2, 400)
+gamma_values = np.linspace(np.pi/2, -np.pi/2, 400)
 beta, gamma = np.meshgrid(beta_values, gamma_values)
 
 start_time = time.time()
 
 # в момента е напълно грешно
 # може би трябва да се променят интервалите на интегриране в зависимост от достиганите стойности на r
-# кривите изглеждат прекалено прави, най-вероятно не смята правилно
+# кривите изглеждат прекалено криви, най-вероятно не смята правилно
 # може би самият начин, по който съм дефинирала кривата е грешен, стойностите от scipy.integrate на пръв поглед не изглеждат ужасни
-obs = geodesics.Observer()
+obs = geodesics.Observer([15, np.pi/2, 0], 0.99)
 init_q = obs.coord()
 # не мога да нацеля прицелен параметър, който да доведе до нестабилната орбита
+# това трябва да отиде на ∞
 init_p1 = obs.p_init(gamma[19, 8], beta[19, 8])
-geo1 = geodesics.Geodesics(0, [0.99], init_q, init_p1)
+geo1 = geodesics.Geodesics(init_q, init_p1)
 ivp1 = np.array([0, init_q[0], init_q[1], init_q[2], init_p1[1], init_p1[2]])
 sol1 = solve_ivp(geo1.hamilton_eqs, [0, -30], ivp1, t_eval=np.linspace(0, -30, 5000))
 
+# това трябва да падне
 init_p2 = obs.p_init(gamma[200, 200], beta[200, 200])
-geo2 = geodesics.Geodesics(0, [0.99], init_q, init_p2)
+geo2 = geodesics.Geodesics(init_q, init_p2)
 ivp3 = np.array([0, init_q[0], init_q[1], init_q[2], init_p2[1], init_p2[2]])
 sol2 = solve_ivp(geo2.hamilton_eqs, [0, -30], ivp3, t_eval=np.linspace(0, -30, 5000))
 
-init_p3 = obs.p_init(gamma[67, 45], beta[67, 45])
-geo3 = geodesics.Geodesics(0, [0.99], init_q, init_p3)
+init_p3 = obs.p_init(gamma[290, 270], beta[290, 270])
+geo3 = geodesics.Geodesics(init_q, init_p3)
 ivp3 = np.array([0, init_q[0], init_q[1], init_q[2], init_p3[1], init_p3[2]])
 sol3 = solve_ivp(geo3.hamilton_eqs, [0, -30], ivp3, t_eval=np.linspace(0, -30, 5000))
 
@@ -51,17 +52,17 @@ phi_sol3 = np.asarray(sol3.y[3])
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-radius = 1.0  # You can change the radius to your desired value
+radius = 1.0  # радиус на хоризонта на събитията на черната дупка при а=1
 u = np.linspace(0, 2 * np.pi, 100)
 v = np.linspace(0, np.pi, 100)
 x = radius * np.outer(np.cos(u), np.sin(v))
 y = radius * np.outer(np.sin(u), np.sin(v))
 z = radius * np.outer(np.ones(np.size(u)), np.cos(v))
 
-def photon_r():
-    photon_r_minus = 2 * (1 + np.cos(2 / 3 * np.arccos(-0.99)))
-    photon_r_plus = 2 * (1 + np.cos(2 / 3 * np.arccos(0.99)))
-    return 0
+photon_r_minus = 2 * (1 + np.cos(2 / 3 * np.arccos(-0.99)))
+photon_r_plus = 2 * (1 + np.cos(2 / 3 * np.arccos(0.99)))
+print(photon_r_plus)
+print(photon_r_minus)
 
 x_curve1 = r_sol1 * np.sin(theta_sol1) * np.cos(phi_sol1)
 y_curve1 = r_sol1 * np.sin(theta_sol1) * np.sin(phi_sol1)
