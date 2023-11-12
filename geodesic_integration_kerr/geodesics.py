@@ -1,5 +1,6 @@
 # c = G = M = 1
 import numpy as np
+from typing import Union
 
 
 def sigma_expr(r, theta, alpha):
@@ -238,26 +239,32 @@ class Observer:
         """
         return np.sqrt(Kerr_metric(self.position, self.alpha)[3, 3])
 
-    def impact_params(self, a1: float, a2: float) -> tuple[float, float]:
+    def impact_params(self, a1: Union[float, np.ndarray], a2: Union[float, np.ndarray]) -> np.ndarray:
         """
         Calculate and return the impact parameters (x, y) of the light ray reaching the observer.
 
         Parameters:
         ----------
-        a1: float
-            The angle associated with the y-axis.
-        a2: float
-            The angle associated with the x-axis.
+        a1: float or np.ndarray
+            The angle(s) associated with the y-axis.
+        a2: float or np.ndarray
+            The angle(s) associated with the x-axis.
 
         Returns:
         ----------
-        tuple[float, float]
+        np.ndarray
             Impact parameters (x, y).
         """
         r_tilde = self.perim_r()
-        x = -r_tilde * a2
-        y = r_tilde * a1
-        return x, y
+
+        if isinstance(a1, np.ndarray) and isinstance(a2, np.ndarray):
+            x = -r_tilde * a2
+            y = r_tilde * a1
+        else:
+            x = -r_tilde * np.array([a2])
+            y = r_tilde * np.array([a1])
+
+        return np.array([x, y])
 
     def gamma_g(self) -> float:
         metric = Kerr_metric(self.position, self.alpha)
@@ -296,6 +303,7 @@ class Observer:
         return [E, p_r, p_th, L]
 
 
+# TODO: да добавя възможност за времеподобни геодезични
 class Geodesics:
     def __init__(self,  position, momentum, metric_params=[0.99], null=True):
         """
@@ -319,6 +327,7 @@ class Geodesics:
         self.momentum = momentum
         self.null = null
 
+    # това най-вероятно ще стане ненужно с писането на integrator.py
     def dgdtheta(self):
         # Calculate and return the derivative of the geodesic components with respect to the polar angle (θ).
         alpha = self.m_params[0]
@@ -371,10 +380,8 @@ class Geodesics:
 
         return H
 
-    # TODO: да проверя знаците на уравненията, началните условия, как се подават данните, какво как се връща
-    # TODO: да проверя дали има нужда от допълнителни условия
     # TODO: да добавя начин за проверка на запазването на енергията и момента на импулса
-    # това е грешно
+    # това дава грешни резултати с solve_ivp -> трябва да опитам нещо друго
     def hamilton_eqs(self, l: float, qp: np.ndarray) -> np.ndarray:
         """
         Calculate and return the Hamiltonian equations for the geodesic motion.
@@ -393,13 +400,11 @@ class Geodesics:
             List of Hamiltonian equations for the geodesic motion.
             The equations represent the evolution of the geodesic coordinates and momenta over the affine parameter l.
         """
-        p_r, p_th = self.momentum[1:3]
+        E, p_r, p_th, L = self.momentum
         alpha = self.m_params[0]
         g = Kerr_metric(self.position, alpha)
         dgdth = self.dgdtheta()
         dgdr = self.dgdr()
-        E = self.momentum[0]
-        L = self.momentum[3]
 
         dzdl = np.zeros(shape=(8), dtype=float)
 
