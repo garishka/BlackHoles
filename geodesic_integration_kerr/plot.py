@@ -119,9 +119,8 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int):
 
 # Generate a grid of angle values (β, γ) for the observer's viewpoint
 # This grid might be adjusted for small angles since the entire calculation for x and y relies on this.
-beta_values = np.linspace(np.pi/2, -np.pi/2, res)
-gamma_values = np.linspace(np.pi/2, -np.pi/2, res)
-beta, gamma = np.meshgrid(beta_values, gamma_values)
+interval = np.linspace(np.pi/2, -np.pi/2, res)
+beta, gamma = np.meshgrid(interval, interval)
 
 # Define a Kerr black hole with spin parameter α = 0.99
 black_hole = geodesics.KerrBlackHole(alpha=0.99)
@@ -130,6 +129,9 @@ r_plus = black_hole.r_plus()
 # Set the observer's position to (r, θ, ϕ) = (15, π, 0), a.k.a default position
 obs = geodesics.Observer()
 init_q = obs.coord()
+
+# Impact parameters (np.ndarray), calculated at every angle (γ, β)
+x, y = obs.impact_params(a1=interval, a2=interval)
 
 # Create an empty white image with a resolution of res
 image = Image.new("RGB", (res, res), "white")
@@ -147,7 +149,11 @@ for i in range(len(beta)):
         # Solve the geodesic equations for the current (β, γ) with given initial conditions
         init_p = obs.p_init(gamma[i, j], beta[i, j])
         geo = geodesics.Geodesics(init_q, init_p, [0.99])
-        ivp = np.array([0, init_q[0], init_q[1], init_q[2], init_p[0], init_p[1], init_p[2], init_p[3]])
+
+        ivp = np.zeros(shape=8, dtype=float)
+        ivp[1:4] = init_q
+        ivp[4:] = init_p
+
         sol = solve_ivp(geo.hamilton_eqs, [0, -30], ivp, t_eval=np.linspace(0, -30, 5000))
 
         # Temporary print statement for debugging
@@ -155,33 +161,40 @@ for i in range(len(beta)):
 
         # Check if the light ray falls into the black hole; if not, map it to the celestial sphere
         for k in range(len(sol.y[1])):
-            # Need to estimate the error for r
+            # TODO: да направя оценка на Δr
             # TODO: да поправя условието за падане в дупката
-            if abs(sol.y[1, k]) <= r_plus + 1e-1:
+            if abs(sol.y[1, k]) <= r_plus + 1e-1:   # <- много грешно
                 # The light ray falls into the black hole; set the pixel to black
                 pixels[i, j] = (0, 0, 0)
-                print("padna v dupkata")
+                print("yeeeeet")
                 break
+            # временно, в събота имаше проблеми с интегрирането
             try:
                 if abs(abs(sol.y[1, k]) - 30) < 1e-1:
                     # Light ray hits the celestial sphere; map it to a pixel on the background image
                     coord = np.asarray([sol.y[2, k], sol.y[3, k]]) / np.pi
                     print(coord)
                     px_coord = map_angle_to_pixel(coord[0], coord[1], res)
+                    print(px_coord)
                     pixels[i, j] = px_bg[px_coord[0], px_coord[1]]
-                    # Used for debugging
-                    counter += 1
+                    # TODO: да свържа пикселите с импакт параметрите
                     break
             except IndexError:
                 pixels[i, j] = (0, 0, 0)
-                print("retard")
+                counter += 1
 
 
+# в момента е грешно
 image.save("test_hole.png")
 
-# TODO: да свържа пикселите с импакт параметрите
-# plt.imshow(image_data в пиксели, cmap='gray', interpolation='nearest')
 # TODO: да начертая графиката
-
+fig, ax = plt.subplots()
+fig.suptitle(r'Kerr Black Hole Shadow for $\alpha=0.99$')
+#ax.imshow(pixels)
+# plt.imshow(image_data в пиксели, cmap='gray', interpolation='nearest')
+ax.set_xlabel(r'$x$')
+ax.set_ylabel(r'$y$')
+#ax.legend(facecolor="white", edgecolor="white", loc='upper right')
+#plt.show()
 # това е да видя каква част от пикселите са минали условието за падане
-print(counter)
+print(f"num raised index errors: {counter}")
