@@ -1,6 +1,5 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 import numpy as np
 import geodesics
 from scipy.integrate import solve_ivp
@@ -119,8 +118,9 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int):
 
 # Generate a grid of angle values (β, γ) for the observer's viewpoint
 # This grid might be adjusted for small angles since the entire calculation for x and y relies on this.
-interval = np.linspace(np.pi/2, -np.pi/2, res)
-beta, gamma = np.meshgrid(interval, interval)
+beta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
+gamma_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
+beta, gamma = np.meshgrid(beta_values, gamma_values)
 
 # Define a Kerr black hole with spin parameter α = 0.99
 black_hole = geodesics.KerrBlackHole(alpha=0.99)
@@ -131,7 +131,7 @@ obs = geodesics.Observer()
 init_q = obs.coord()
 
 # Impact parameters (np.ndarray), calculated at every angle (γ, β)
-x, y = obs.impact_params(a1=interval, a2=interval)
+x, y = obs.impact_params(a1=gamma_values, a2=beta_values)
 
 # Create an empty white image with a resolution of res
 image = Image.new("RGB", (res, res), "white")
@@ -151,10 +151,10 @@ for i in range(len(beta)):
         geo = geodesics.Geodesics(init_q, init_p, [0.99])
 
         ivp = np.zeros(shape=8, dtype=float)
-        ivp[1:4] = init_q
+        ivp[1:3] = init_q
         ivp[4:] = init_p
 
-        sol = solve_ivp(geo.hamilton_eqs, [0, -30], ivp, t_eval=np.linspace(0, -30, 5000))
+        sol = solve_ivp(geo.hamilton_eqs, [0, -10000], ivp, t_eval=np.linspace(0, -10000, 50000))
 
         # Temporary print statement for debugging
         print(i, j)

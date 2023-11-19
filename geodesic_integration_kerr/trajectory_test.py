@@ -7,12 +7,13 @@ import matplotlib.pyplot as plt
 import geodesics
 from einsteinpy import integrators
 
+res = 400
 init_l = 0
-final_l = -10
-num_points = 1000
+final_l = -10000
+num_points = 100000
 
-beta_values = np.linspace(np.pi/2, -np.pi/2, 400)
-gamma_values = np.linspace(np.pi/2, -np.pi/2, 400)
+beta_values = np.linspace((1-5e-4)*np.pi, (1+5e-4)*np.pi, res)
+gamma_values = np.linspace(-5e-4*np.pi, 5e-4*np.pi, res)
 beta, gamma = np.meshgrid(beta_values, gamma_values)
 
 start_time = time.time()
@@ -21,7 +22,7 @@ start_time = time.time()
 # може би трябва да се променят интервалите на интегриране в зависимост от достиганите стойности на r
 # кривите изглеждат прекалено криви, най-вероятно не смята правилно
 # може би самият начин, по който съм дефинирала кривата е грешен, стойностите от scipy.integrate на пръв поглед не изглеждат ужасни
-obs = geodesics.Observer([15, np.pi/2, 0], 0.99)
+obs = geodesics.Observer([500, np.pi/2, 0], 0.99)
 init_q = obs.coord()
 # не мога да нацеля прицелен параметър, който да доведе до нестабилната орбита
 # това трябва да отиде на ∞
@@ -30,7 +31,8 @@ geo1 = geodesics.Geodesics(init_q, init_p1)
 ivp1 = np.zeros(shape=8, dtype=float)
 ivp1[1:4] = init_q
 ivp1[4:] = init_p1
-sol1 = integrators.fantasy.GeodesicIntegrator("Kerr", 0.99, init_q, init_p1, time_like=False, steps=1000, delta=0.5)
+sol1 = solve_ivp(geo1.hamilton_eqs, [init_l, final_l], ivp1, t_eval=np.linspace(0, final_l, num_points), method='DOP853')
+#integrators.fantasy.GeodesicIntegrator("Kerr", 0.99, init_q, init_p1, time_like=False, steps=1000, delta=0.5)
 print(sol1)
 
 # това трябва да падне
