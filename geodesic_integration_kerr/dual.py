@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Callable, Union, List
+import warnings
 
 
 # Този клас е практически същият като от статията - просто си добавих docstring и преименувах неща, за да ми е
@@ -274,7 +275,7 @@ class HyperDual:
         )
 
 
-def derivative(func: Callable, x: Union[list, np.ndarray]):
+def derivative(func: Callable, x: float):
     """
         Calculate the derivative of a given function at a specific point using dual numbers.
 
@@ -336,7 +337,7 @@ def partial_deriv(func: Callable, vars: Union[list, np.ndarray], wrt_index: int,
     dual_vars[wrt_index].b = 1.
 
     if len(params) != 0:
-        dual_func = func(dual_vars, params)
+        dual_func = func(dual_vars, *params)
     else:
         dual_func = func(dual_vars)
 
@@ -389,3 +390,44 @@ def jacobian(new_coord: List[Callable], old_coord: Union[list, np.ndarray], *par
             j[i, k] = partial_deriv(new_coord[i], old_coord, k, *params)
 
     return j
+
+
+def second_deriv(func: Callable, x: float, *params):
+    hd_x = HyperDual(x, 1., 1., 1.)
+
+    if len(params) != 0:
+        hd_func = func(hd_x, params)
+    else:
+        hd_func = func(hd_x)
+
+    if isinstance(hd_func, HyperDual):
+        return (hd_func.a3 - (hd_x.a3 / hd_x.a1) * hd_func.a1) / (hd_x.a1 * hd_x.a2)
+    else:
+        return 0
+
+
+def second_partial_deriv(func: Callable, vars: Union[list, np.ndarray], wrt_index: Union[list, np.ndarray], *params):
+    global hd_vars
+    if len(vars) == 1:
+        return second_deriv(func, vars[0], *params)
+    elif len(vars) > 1:
+        if len(wrt_index) == 2:
+            hd_vars = [HyperDual(i, 0, 0, 0) for i in vars]
+            if wrt_index[0] != wrt_index[1]:
+                hd_vars[wrt_index[0]] = HyperDual(hd_vars[wrt_index[0]].a0, 1., 0., 0.)
+                hd_vars[wrt_index[1]] = HyperDual(hd_vars[wrt_index[1]].a0, 0., 1., 0.)
+            else:
+                hd_vars[wrt_index[0]] = HyperDual(hd_vars[wrt_index[0]].a0, 1., 1., 0.)
+                hd_vars[wrt_index[1]] = HyperDual(hd_vars[wrt_index[1]].a0, 1., 1., 0.)
+        else:
+            raise ValueError("Input list 'wrt_index' must have a length of 2.")
+
+    if len(params) != 0:
+        hd_func = func(hd_vars, *params)
+    else:
+        hd_func = func(hd_vars)
+
+    if isinstance(hd_func, HyperDual):
+        return hd_func.a3
+    else:
+        return 0.
