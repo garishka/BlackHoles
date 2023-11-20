@@ -64,28 +64,29 @@ def hamiltonian(qp, a):
 def hamiltons_eqs(l, qp, *params):
     a = params[0]
 
-    dq0dl = dual.partial_deriv(hamiltonian, qp, a, 0)
-    dq1dl = dual.partial_deriv(hamiltonian, qp, a, 1)
-    dq2dl = dual.partial_deriv(hamiltonian, qp, a, 2)
-    dq3dl = dual.partial_deriv(hamiltonian, qp, a, 3)
+    dq0dl = dual.partial_deriv(hamiltonian, qp, 0, a)
+    dq1dl = dual.partial_deriv(hamiltonian, qp, 1, a)
+    dq2dl = dual.partial_deriv(hamiltonian, qp, 2, a)
+    dq3dl = dual.partial_deriv(hamiltonian, qp, 3, a)
 
-    dp0dl = - dual.partial_deriv(hamiltonian, qp, a, 4)
-    dp1dl = - dual.partial_deriv(hamiltonian, qp, a, 5)
-    dp2dl = - dual.partial_deriv(hamiltonian, qp, a, 6)
-    dp3dl = - dual.partial_deriv(hamiltonian, qp, a, 7)
+    dp0dl = - dual.partial_deriv(hamiltonian, qp, 4, a)
+    dp1dl = - dual.partial_deriv(hamiltonian, qp, 5, a)
+    dp2dl = - dual.partial_deriv(hamiltonian, qp, 6, a)
+    dp3dl = - dual.partial_deriv(hamiltonian, qp, 7, a)
 
     return [dq0dl, dq1dl, dq2dl, dq3dl, dp0dl, dp1dl, dp2dl, dp3dl]
 
 
 def jacobian(l, qp, *params):
     a = params[0]
-    H = hamiltonian(qp, a)
 
     j = np.zeros(shape=(8, 8))
 
     for i in range(8):
-        for k in range(8):
-            j[i, k] = dual.partial_deriv()
+        for k in range(4):
+            j[k, i] = dual.second_partial_deriv(hamiltonian, qp, [k, i], a)
+        for k in range(4, 8):
+            j[k, i] = - dual.second_partial_deriv(hamiltonian, qp, [k, i], a)
 
     return j
 
@@ -115,14 +116,16 @@ for i in range(len(alpha_values)):
         qp = [0, r0, th0, 0] + p0
         qp = np.asarray(qp)
 
-        #ne raboti ;((((((((((((((((((((((
-        print(hamiltons_eqs(0, qp, a0))
+        # ne raboti ;((((((((((((((((((((((
         sol = solve_ivp(hamiltons_eqs,
                         t_span=[0, -np.infty],
                         y0=qp,
-                        method="BDF",
-                        t_eval=np.linspace(0, -50_000, 100_000),
-                        args=(a0,)
+                        method="LSODA",
+                        t_eval=np.linspace(0, -5_000, 10_000),
+                        args=(a0,),
+                        jac=jacobian,
+                        max_step=100,
+                        min_step=1e-2
                         )
 
 
