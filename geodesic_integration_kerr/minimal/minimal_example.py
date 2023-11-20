@@ -77,6 +77,19 @@ def hamiltons_eqs(l, qp, *params):
     return [dq0dl, dq1dl, dq2dl, dq3dl, dp0dl, dp1dl, dp2dl, dp3dl]
 
 
+def jacobian(l, qp, *params):
+    a = params[0]
+    H = hamiltonian(qp, a)
+
+    j = np.zeros(shape=(8, 8))
+
+    for i in range(8):
+        for k in range(8):
+            j[i, k] = dual.partial_deriv()
+
+    return j
+
+
 def init_p(r, th, a, alpha_i, beta_i):
     gamma_g = -g03(r, th, a) / np.sqrt(g33(r, th, a) * (g03(r, th, a) ** 2 - g00(r, th, a) * g33(r, th, a)))
     zeta = np.sqrt(g33(r, th, a) / (g03(r, th, a) ** 2 - g00(r,th, a) * g33(r, th, a)))
@@ -88,8 +101,6 @@ def init_p(r, th, a, alpha_i, beta_i):
 
     return [E, p_r, p_th, L]
 
-# towa si dava resultat
-print(hamiltons_eqs(0, [0, r0, th0, 0]+init_p(r0, th0, a0, alpha_values[0], beta_values[1]), a0))
 
 image = Image.new("RGB", (res, res), "white")
 draw = ImageDraw.Draw(image)

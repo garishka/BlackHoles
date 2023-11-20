@@ -145,6 +145,104 @@ class DualNumber:
         return DualNumber(np.exp(self.a), self.b * np.exp(self.a))
 
 
+class HyperDual:
+    def __init__(self, a0, a1=0., a2=0., a3=0.):
+        self.a0 = a0
+        self.a1 = a1
+        self.a2 = a2
+        self.a3 = a3
+
+    def __mul__(self, num):
+        if isinstance(num, HyperDual):
+            return HyperDual(
+                self.a0 * num.a0,
+                self.a0 * num.a1 + self.a1 * num.a0,
+                self.a0 * num.a2 + self.a2 * num.a0,
+                self.a0 * num.a3 + self.a1 * num.a2 + self.a2 * num.a1 + self.a3 * num.a0
+            )
+        else:
+            return HyperDual(self.a0 * num, self.a1 * num, self.a2 * num, self.a3 * num)
+
+    def __rmul__(self, num):
+        return self.__mul__(num)
+
+    def __add__(self, num):
+        if isinstance(num, HyperDual):
+            return HyperDual(self.a0 + num.a0, self.a1 + num.a1, self.a2 + num.a2, self.a3 + num.a3)
+        else:
+            return HyperDual(self.a0 + num, self.a1, self.a2, self.a3)
+
+    def __radd__(self, num):
+        return self.__add__(num)
+
+    def __sub__(self, num):
+        if isinstance(num, HyperDual):
+            return HyperDual(self.a0 - num.a0, self.a1 - num.a1, self.a2 - num.a2, self.a3 - num.a3)
+        else:
+            return HyperDual(self.a0 - num, self.a1, self.a2, self.a3)
+
+    def __rsub__(self, num):
+        return HyperDual(num, 0, 0, 0) - self
+
+    def __truediv__(self, num):
+        if isinstance(num, HyperDual):
+            if num.a0 != 0:
+                inv_num = HyperDual(
+                    1.0 / num.a0,
+                    - num.a1 / num.a0 ** 2,
+                    - (num.a2 / num.a0) ** 2,
+                    num.a3 / num.a0 ** 2 - 2 * num.a1 * num.a2 / num.a0 ** 3
+                )
+                return HyperDual(self.a0 / inv_num.a0, self.a1 / inv_num.a1, self.a2 / inv_num.a2, self.a3 / inv_num.a3)
+        else:
+            return HyperDual(self.a0 / num, self.a1 / num, self.a2 / num, self.a3 / num)
+
+    def __rtruediv__(self, num):
+        return HyperDual(num, 0, 0, 0).__truediv__(self)
+
+    def __neg__(self):
+        return HyperDual(-self.a0, -self.a1, -self.a2, -self.a3)
+
+    def __pow__(self, power):
+        return HyperDual()
+
+    def sin(self):
+        return HyperDual(
+            np.sin(self.a0),
+            self.a1 * np.cos(self.a0),
+            self.a2 * np.cos(self.a0),
+            self.a3 * np.cos(self.a0) - self.a1 * self.a2 * np.sin(self.a0)
+        )
+
+    def cos(self):
+        return HyperDual(
+            np.cos(self.a0),
+            -self.a1 * np.sin(self.a0),
+            -self.a2 * np.sin(self.a0),
+            -self.a3 * np.sin(self.a0) - self.a1 * self.a2 * np.cos(self.a0)
+        )
+
+    def tan(self):
+        return self.sin() / self.cos()
+
+    def log(self):
+        return HyperDual(
+            np.log(self.a0),
+            self.a1 / self.a0,
+            self.a2 / self.a0,
+            self.a3 / self.a0 - (self.a1 * self.a2) / self.a0**2
+        )
+
+    def exp(self):
+        exp_val = np.exp(self.a0)
+        return HyperDual(
+            exp_val,
+            self.a1 * exp_val,
+            self.a2 * exp_val,
+            self.a3 * exp_val + self.a1 * self.a2 * exp_val
+        )
+
+
 def derivative(func: Callable, x: Union[list, np.ndarray]):
     """
         Calculate the derivative of a given function at a specific point using dual numbers.
