@@ -146,6 +146,34 @@ class DualNumber:
 
 
 class HyperDual:
+    """
+        Support for hyper-dual numbers.
+
+        Attributes:
+        -------------
+        - a0 (float): The primary real number component.
+        - a1 (float, optional): The coefficient of the first-order infinitesimal term (default is 0.).
+        - a2 (float, optional): The coefficient of the second-order infinitesimal term (default is 0.).
+        - a3 (float, optional): The coefficient of the non-vanishing second-order infinitesimal term (default is 0.).
+
+        Methods:
+        ------------
+        - __mul__: Multiply with another HyperDual number or scalar.
+        - __rmul__: Right multiplication with a scalar.
+        - __add__: Add another HyperDual number or scalar.
+        - __radd__: Right addition with a scalar.
+        - __sub__: Subtract another HyperDual number or scalar.
+        - __rsub__: Right subtraction with a scalar.
+        - __truediv__: Divide by another HyperDual number or scalar.
+        - __rtruediv__: Right division by a scalar.
+        - __neg__: Negate the HyperDual number.
+        - __pow__: Compute the power of the HyperDual number.
+        - sin: Compute the sine of the HyperDual number.
+        - cos: Compute the cosine of the HyperDual number.
+        - tan: Compute the tangent of the HyperDual number.
+        - log: Compute the natural logarithm of the HyperDual number.
+        - exp: Compute the exponential of the HyperDual number.
+        """
     def __init__(self, a0, a1=0., a2=0., a3=0.):
         self.a0 = a0
         self.a1 = a1
@@ -203,8 +231,11 @@ class HyperDual:
     def __neg__(self):
         return HyperDual(-self.a0, -self.a1, -self.a2, -self.a3)
 
-    def __pow__(self, power):
-        return HyperDual()
+    def __pow__(self, p):
+        return HyperDual(self.a0 ** p,
+                         self.a1 * p * self.a0 ** (p - 1),
+                         self.a2 * p * self.a0 ** (p - 1),
+                         self.a3 * p * self.a0 ** (p - 1) + self.a1 * self.a2 * p * (p - 1) * self.a0 ** (p - 2))
 
     def sin(self):
         return HyperDual(
