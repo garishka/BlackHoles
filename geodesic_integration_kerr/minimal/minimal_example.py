@@ -1,8 +1,8 @@
 import numpy as np
 from geodesic_integration_kerr import dual
-from scipy.integrate import solve_ivp
 from PIL import Image, ImageDraw
-from matplotlib import pyplot as plt
+from geodesic_integration_kerr.integrator import symplectic_integrator
+import time
 
 res = 50
 r0 = 5000
@@ -82,6 +82,7 @@ def jacobian(l, qp, *params):
 
     j = np.zeros(shape=(8, 8))
 
+    # да поправя реда на диференциране
     for i in range(8):
         for k in range(4):
             j[k, i] = dual.second_partial_deriv(hamiltonian, qp, [k, i], a)
@@ -109,24 +110,18 @@ pixels = image.load()
 
 for i in range(len(alpha_values)):
     for j in range(len(beta_values)):
-
+        # близо 30сек на итерация
+        start = time.time()
         print(i, j)
 
         p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
         qp = [0, r0, th0, 0] + p0
         qp = np.asarray(qp)
 
-        # ne raboti ;((((((((((((((((((((((
-        sol = solve_ivp(hamiltons_eqs,
-                        t_span=[0, -np.infty],
-                        y0=qp,
-                        method="LSODA",
-                        t_eval=np.linspace(0, -5_000, 10_000),
-                        args=(a0,),
-                        jac=jacobian,
-                        max_step=100,
-                        min_step=1e-2
-                        )
+        results = symplectic_integrator(hamiltonian, qp, [a0], 50, 0.9, 10_000)
+        end = time.time()
+        print(end-start)
+        print(results.transpose()[0])
 
 
 image.save("minimal_BHtest.png")
