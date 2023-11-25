@@ -36,8 +36,8 @@ def flow_C(double_qp, step, omega):
     ll = - ur
     R = np.block([[ul, ur], [ll, lr]])
 
-    double_qp[:8] = 0.5 * (qp - xy) + R @ (qp - xy)
-    double_qp[8:] = 0.5 * (qp + xy) - R @ (qp - xy)
+    double_qp[:8] = 0.5 * (qp + xy) + 0.5 * R @ (qp - xy)
+    double_qp[8:] = 0.5 * (qp + xy) - 0.5 * R @ (qp - xy)
 
     return double_qp
 
@@ -57,12 +57,10 @@ def symplectic_integrator(H, qp0, metric_params, step_size, omega, num_steps):
     double_qp = np.tile(qp0, 2)
     results = np.zeros(shape=(num_steps, 2 * len(qp0)))
     results[0] = double_qp
-    print(results[0])
 
     for i in range(1, num_steps):
         current_qp = second_order(H, results[i-1], metric_params, step_size, omega)
         results[i] = current_qp
-        print(results[i])
 
     results_T = np.transpose(results)
 
