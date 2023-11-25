@@ -8,8 +8,8 @@ def flow_A(H, double_qp, metric_params, step):
     qy = np.concatenate((double_copy[:4], double_copy[12:]), axis=0)
 
     for i in range(4):
-        double_qp[4:8] -= step * dual.partial_deriv(H, qy, i, *metric_params)
-        double_qp[8:12] += step * dual.partial_deriv(H, qy, i+4, *metric_params)
+        double_qp[4+i] -= step * dual.partial_deriv(H, qy, i, *metric_params)
+        double_qp[8+i] += step * dual.partial_deriv(H, qy, i+4, *metric_params)
 
     return double_qp
 
@@ -19,8 +19,8 @@ def flow_B(H, double_qp, metric_params, step):
     xp = np.concatenate((double_copy[8:12], double_copy[4:8]))
 
     for i in range(4):
-        double_qp[:4] += step * dual.partial_deriv(H, xp, i, *metric_params)
-        double_qp[8:12] -= step * dual.partial_deriv(H, xp, i+4, *metric_params)
+        double_qp[i] += step * dual.partial_deriv(H, xp, i+4, *metric_params)
+        double_qp[12+i] -= step * dual.partial_deriv(H, xp, i, *metric_params)
 
     return double_qp
 
@@ -57,10 +57,12 @@ def symplectic_integrator(H, qp0, metric_params, step_size, omega, num_steps):
     double_qp = np.tile(qp0, 2)
     results = np.zeros(shape=(num_steps, 2 * len(qp0)))
     results[0] = double_qp
+    print(results[0])
 
-    for i in range(num_steps-1):
-        current_qp = second_order(H, results[i], metric_params, step_size, omega)
-        results[i+1] = current_qp
+    for i in range(1, num_steps):
+        current_qp = second_order(H, results[i-1], metric_params, step_size, omega)
+        results[i] = current_qp
+        print(results[i])
 
     results_T = np.transpose(results)
 

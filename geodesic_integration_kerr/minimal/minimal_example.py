@@ -62,17 +62,18 @@ def hamiltonian(qp, a):
 
 
 def hamiltons_eqs(l, qp, *params):
+    t, r, th, phi, p0, p1, p2, p3 = qp
     a = params[0]
 
-    dq0dl = dual.partial_deriv(hamiltonian, qp, 0, a)
-    dq1dl = dual.partial_deriv(hamiltonian, qp, 1, a)
-    dq2dl = dual.partial_deriv(hamiltonian, qp, 2, a)
-    dq3dl = dual.partial_deriv(hamiltonian, qp, 3, a)
+    dq0dl = g00(r, th, a) * p0 + g03(r, th, a) * p3    #dual.partial_deriv(hamiltonian, qp, 0, a)
+    dq1dl = g11(r, th, a) * p1    #dual.partial_deriv(hamiltonian, qp, 1, a)
+    dq2dl = g22(r, th, a) * p2    #dual.partial_deriv(hamiltonian, qp, 2, a)
+    dq3dl = g03(r, th, a) * p0 + g33(r, th, a) * p3    #dual.partial_deriv(hamiltonian, qp, 3, a)
 
-    dp0dl = - dual.partial_deriv(hamiltonian, qp, 4, a)
+    dp0dl = 0 # - dual.partial_deriv(hamiltonian, qp, 4, a)
     dp1dl = - dual.partial_deriv(hamiltonian, qp, 5, a)
     dp2dl = - dual.partial_deriv(hamiltonian, qp, 6, a)
-    dp3dl = - dual.partial_deriv(hamiltonian, qp, 7, a)
+    dp3dl = 0 # - dual.partial_deriv(hamiltonian, qp, 7, a)
 
     return [dq0dl, dq1dl, dq2dl, dq3dl, dp0dl, dp1dl, dp2dl, dp3dl]
 
@@ -117,8 +118,10 @@ for i in range(len(alpha_values)):
         p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
         qp = [0, r0, th0, 0] + p0
         qp = np.asarray(qp)
+        print(qp)
 
-        results = symplectic_integrator(hamiltonian, qp, [a0], 50, 0.9, 10_000)
+        # запазващите се величини не се запазват, нищо не се смята като хората, ще се хвърля
+        results = symplectic_integrator(hamiltonian, qp, [a0], 50, 1, 10_000)
         end = time.time()
         print(end-start)
         print(results.transpose()[0])
