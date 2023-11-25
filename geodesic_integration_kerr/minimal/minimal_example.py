@@ -5,7 +5,7 @@ from geodesic_integration_kerr.integrator import symplectic_integrator
 import time
 
 res = 50
-r0 = 5000
+r0 = 500
 th0 = np.pi/2
 a0 = 0.99
 alpha_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
@@ -111,20 +111,23 @@ pixels = image.load()
 
 for i in range(len(alpha_values)):
     for j in range(len(beta_values)):
-        # близо 30сек на итерация
         start = time.time()
-        print(i, j)
 
         p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
-        qp = [0, r0, th0, 0] + p0
-        qp = np.asarray(qp)
-        print(qp)
+        qp = np.asarray(([0, r0, th0, 0] + p0))
 
-        # запазващите се величини не се запазват, нищо не се смята като хората, ще се хвърля
-        results = symplectic_integrator(hamiltonian, qp, [a0], 50, 1, 10_000)
+        results = symplectic_integrator(hamiltonian, qp, [a0], 0.1, 1, 10_000)
+
         end = time.time()
-        print(end-start)
-        print(results.transpose()[0])
+        print(end-start)    # близо 30сек на итерация
+
+        for k in range(len(results[0])):
+            # Δr за данните е ≂0.1
+            if abs(results[1, k]) <= r_plus + 1e-1:
+                # The light ray falls into the black hole; set the pixel to black
+                pixels[i, j] = (0, 0, 0)
+                print("yeeeeet")
+                break
 
 
 image.save("minimal_BHtest.png")
