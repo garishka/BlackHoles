@@ -1,10 +1,13 @@
+import itertools
+import logging
 import numpy as np
 from geodesic_integration_kerr import dual
 from PIL import Image, ImageDraw
 from geodesic_integration_kerr.integrator import symplectic_integrator
 import time
+import concurrent.futures
 
-res = 50
+res = 80
 r0 = 500
 th0 = np.pi/2
 a0 = 0.99
@@ -105,29 +108,44 @@ def init_p(r, th, a, alpha_i, beta_i):
     return [E, p_r, p_th, L]
 
 
-image = Image.new("RGB", (res, res), "white")
-draw = ImageDraw.Draw(image)
-pixels = image.load()
+def solve_ivp(i, j):
+    logging.info(f"Processing pixel ({i}, {j})")
 
-for i in range(len(alpha_values)):
-    for j in range(len(beta_values)):
-        start = time.time()
+    p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
+    qp = np.asarray(([0, r0, th0, 0] + p0))
 
-        p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
-        qp = np.asarray(([0, r0, th0, 0] + p0))
+    results = symplectic_integrator(hamiltonian, qp, [a0], 0.1, 1, 10_000)
 
-        results = symplectic_integrator(hamiltonian, qp, [a0], 0.1, 1, 10_000)
-
-        end = time.time()
-        print(end-start)    # близо 30сек на итерация
-
-        for k in range(len(results[0])):
-            # Δr за данните е ≂0.1
-            if abs(results[1, k]) <= r_plus + 1e-1:
-                # The light ray falls into the black hole; set the pixel to black
-                pixels[i, j] = (0, 0, 0)
-                print("yeeeeet")
-                break
+    for k in range(len(results[0])):
+        # Δr за данните?
+        if results[1, k] <= r_plus + 1e-1:
+            # The light ray falls into the black hole; return the values of the pixel that has to be set black
+            # С concurrent.futures.ProcessPoolExecutor() не знам как да акумулира промените вместо да създава нова
+            # картинка на всеки 7-8 процеса
+            return True, (i, j)
+    return False, (i, j)
 
 
-image.save("minimal_BHtest.png")
+if __name__ == "__main__":
+    image = Image.new("RGB", (res, res), "white")
+    draw = ImageDraw.Draw(image)
+    pixels = image.load()
+
+    logging.basicConfig(level=logging.INFO)
+    iterable = list(itertools.product(range(res), range(res)))
+    i, j = zip(*iterable)
+
+    start = time.time()
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for result in executor.map(solve_ivp, i, j):
+            fallen, coords = result
+
+            if fallen:
+                a, b = coords
+                pixels[a, b] = (0, 0, 0)
+
+    end = time.time()
+    print(f"Time taken: {end - start}")
+
+    image.save("miniBHtest.jpg")
