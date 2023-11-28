@@ -431,3 +431,18 @@ def second_partial_deriv(func: Callable, vars: Union[list, np.ndarray], wrt_inde
         return hd_func.a3
     else:
         return 0.
+
+def jacobian_H(H, qp, *params):
+    a = params[0]
+
+    j = np.zeros(shape=(8, 8))
+
+    # да поправя реда на диференциране
+    for i in range(8):
+        for k in range(4):
+            j[k, i] = second_partial_deriv(H, qp, [k, i], a)
+        for k in range(4, 8):
+            j[k, i] = - second_partial_deriv(H, qp, [k, i], a)
+
+    return j
+

@@ -1,23 +1,26 @@
 import itertools
 import logging
 import numpy as np
-from geodesic_integration_kerr import dual
 from PIL import Image, ImageDraw
-from geodesic_integration_kerr.integrator import symplectic_integrator
 import time
 import concurrent.futures
 
-res = 80
-r0 = 500
-th0 = np.pi/2
-a0 = 0.99
+from geodesic_integration_kerr.integrator import symplectic_integrator
+
+res = 14    # image resolution
+r0 = 1_000     # initial radial coordinate
+th0 = np.pi/2   # initial azimuthal coordinate
+a0 = 0.99   # spin param. of the BH
 alpha_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
 beta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
 
-r_plus = 1 + np.sqrt(1 - a0 ** 2)
+step = 0.2  # step size for the symplectic integrator
+omg = 1     # coupling constant for the doubled phase space, using in the integration scheme
+steps = 10_000  # number of integration steps
+
+r_plus = 1 + np.sqrt(1 - a0 ** 2)   # BH event horizon
 
 
-# metric
 def sigma_expr(r, theta, a):
     return r ** 2 + (a * np.cos(theta)) ** 2
 
@@ -29,6 +32,7 @@ def A_expr(r, theta, a):
     return (r ** 2 + a ** 2) ** 2 - delta_expr(r, a) * (a * np.sin(theta)) ** 2
 
 
+# nonzero covariant metric components
 def g00(r, th, a):
     return 2 * r / sigma_expr(r, th, a) - 1
 def g03(r, th, a):
@@ -42,7 +46,8 @@ def g22(r, th, a):
 def g33(r, th, a):
     return A_expr(r, th, a) * np.sin(th) ** 2 / sigma_expr(r, th, a)
 
-# inverse metric elements
+
+# nonzero inverse metric components
 def inv_g00(r, th, a):
     return - A_expr(r, th, a) / (delta_expr(r, a) * sigma_expr(r, th, a))
 def inv_g03(r, th, a):
@@ -64,38 +69,6 @@ def hamiltonian(qp, a):
         inv_g22(r, th, a) * p2 ** 2 + inv_g33(r, th, a) * p3 ** 2)
 
 
-def hamiltons_eqs(l, qp, *params):
-    t, r, th, phi, p0, p1, p2, p3 = qp
-    a = params[0]
-
-    dq0dl = g00(r, th, a) * p0 + g03(r, th, a) * p3    #dual.partial_deriv(hamiltonian, qp, 0, a)
-    dq1dl = g11(r, th, a) * p1    #dual.partial_deriv(hamiltonian, qp, 1, a)
-    dq2dl = g22(r, th, a) * p2    #dual.partial_deriv(hamiltonian, qp, 2, a)
-    dq3dl = g03(r, th, a) * p0 + g33(r, th, a) * p3    #dual.partial_deriv(hamiltonian, qp, 3, a)
-
-    dp0dl = 0 # - dual.partial_deriv(hamiltonian, qp, 4, a)
-    dp1dl = - dual.partial_deriv(hamiltonian, qp, 5, a)
-    dp2dl = - dual.partial_deriv(hamiltonian, qp, 6, a)
-    dp3dl = 0 # - dual.partial_deriv(hamiltonian, qp, 7, a)
-
-    return [dq0dl, dq1dl, dq2dl, dq3dl, dp0dl, dp1dl, dp2dl, dp3dl]
-
-
-def jacobian(l, qp, *params):
-    a = params[0]
-
-    j = np.zeros(shape=(8, 8))
-
-    # да поправя реда на диференциране
-    for i in range(8):
-        for k in range(4):
-            j[k, i] = dual.second_partial_deriv(hamiltonian, qp, [k, i], a)
-        for k in range(4, 8):
-            j[k, i] = - dual.second_partial_deriv(hamiltonian, qp, [k, i], a)
-
-    return j
-
-
 def init_p(r, th, a, alpha_i, beta_i):
     gamma_g = -g03(r, th, a) / np.sqrt(g33(r, th, a) * (g03(r, th, a) ** 2 - g00(r, th, a) * g33(r, th, a)))
     zeta = np.sqrt(g33(r, th, a) / (g03(r, th, a) ** 2 - g00(r,th, a) * g33(r, th, a)))
@@ -114,7 +87,7 @@ def solve_ivp(i, j):
     p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
     qp = np.asarray(([0, r0, th0, 0] + p0))
 
-    results = symplectic_integrator(hamiltonian, qp, [a0], 0.1, 1, 10_000)
+    results = symplectic_integrator(hamiltonian, qp, [a0], step, omg, steps)
 
     for k in range(len(results[0])):
         # Δr за данните?
