@@ -1,12 +1,15 @@
 import numpy as np
 from typing import Callable, Union, List
 import warnings
+from numba.experimental import jitclass
+import numba
 
 
 # Този клас е практически същият като от статията - просто си добавих docstring и преименувах неща, за да ми е
 # по-лесно да разбера какво правя.
 # FANTASY: User-friendly Symplectic Geodesic Integrator for Arbitrary Metrics with Automatic Differentiation
 # https://doi.org/10.3847/1538-4357/abdc28
+#@jitclass([("a", numba.float64), ("b", numba.float64)])
 class DualNumber:
     """
     This class provides support for dual numbers, which are expressions of the form a + b * ε,
@@ -275,6 +278,7 @@ class HyperDual:
         )
 
 
+#@numba.njit
 def derivative(func: Callable, x: float):
     """
         Calculate the derivative of a given function at a specific point using dual numbers.
@@ -299,6 +303,7 @@ def derivative(func: Callable, x: float):
         return 0
 
 
+#@numba.njit
 def partial_deriv(func: Callable, vars: Union[list, np.ndarray], wrt_index: int, *params):
     """
     Compute the partial derivative of a multivariable function with respect to a specific variable.

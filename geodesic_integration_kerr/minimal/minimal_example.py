@@ -47,21 +47,22 @@ import numpy as np
 from PIL import Image, ImageDraw
 import time
 import concurrent.futures
+import numba
 
 from geodesic_integration_kerr.integrator import symplectic_integrator
 
-res = 100
-r0 = 1_000
+res = 14
+r0 = 500
 th0 = np.pi/2
 a0 = 0.99
-alpha_values = np.linspace(-3e-3*np.pi, 3e-3*np.pi, res)
-beta_values = np.linspace((1-3e-3)*np.pi, (1+3e-3)*np.pi, res)
+alpha_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
+beta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
 
-step = 0.2
-omg = 1
-steps = 10_000
+step = 0.4
+omg = 1.
+steps = 6_000
 
-r_plus = 1 + np.sqrt(1 - a0 ** 2)
+r_plus = 1. + np.sqrt(1 - a0 ** 2)
 
 
 def sigma_expr(r, theta, a):
@@ -113,7 +114,7 @@ def hamiltonian(qp, a):
 
 
 def init_p(r: float, th: float, a: float, alpha_i: float, beta_i: float):
-    gamma_g = -g03(r, th, a) / np.sqrt(g33(r, th, a) * (g03(r, th, a) ** 2 - g00(r, th, a) * g33(r, th, a)))
+    gamma_g = -g03(r, th, a) / np.sqrt(g33(r, th, a) * (g03(r, th, a) ** 2 - g00(r, th, a) * g33(r, th, a) ** 2))
     zeta = np.sqrt(g33(r, th, a) / (g03(r, th, a) ** 2 - g00(r,th, a) * g33(r, th, a)))
 
     p_th = np.sqrt(g22(r, th, a)) * np.sin(alpha_i)
@@ -124,17 +125,18 @@ def init_p(r: float, th: float, a: float, alpha_i: float, beta_i: float):
     return [E, p_r, p_th, L]
 
 
-def solve_ivp(i, j):
+#@numba.jit Cannot determine Numba type of <class 'function'>
+def solve_ivp_(i, j):
     logging.info(f"Processing pixel ({i}, {j})")
 
     p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
     qp = np.asarray(([0, r0, th0, 0] + p0))
 
-    results = symplectic_integrator(hamiltonian, qp, [a0], step, omg, steps)
+    results = symplectic_integrator(hamiltonian, qp, [a0], step, omg, steps, 4)
 
     for k in range(len(results[0])):
         # Δr за данните?
-        if results[1, k] <= r_plus + 1e-1:
+        if results[1, k] <= r_plus:
             # The light ray falls into the black hole; return the values of the pixel that has to be set black
             # С concurrent.futures.ProcessPoolExecutor() не знам как да акумулира промените вместо да създава нова
             # картинка на всеки 7-8 процеса -> създавам картинката в __main__ частта
@@ -151,25 +153,26 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
     iterable = list(itertools.product(range(res), range(res)))
-    i, j = zip(*iterable)
+    k, l = zip(*iterable)
 
     start = time.time()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
-        for result in executor.map(solve_ivp, i, j):
+        for result in executor.map(solve_ivp_, k, l):
             fallen, coords = result
 
-            a, b = coords
+            d, b = coords
             if fallen:
-                pixels[b, res-1-a] = (0, 0, 0)
-            else:
-                pixels[b, res-1-a] = (255, 255, 255)
+                pixels[b, res - 1 - d] = (0, 0, 0)
+            #else:
+            #    pixels[b, res - 1 - d] = (255, 255, 255)
 
     end = time.time()
     elapsed_time_sec = end - start
     hours, remainder = divmod(elapsed_time_sec, 3600)
     minutes, seconds = divmod(remainder, 60)
-    print(f"Time taken: {hours}:{minutes}:{seconds}")
+    print(start)
+    print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
 
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
-    image.save("miniBHtest.png")
+    image.save("miniBHtest2.png")
