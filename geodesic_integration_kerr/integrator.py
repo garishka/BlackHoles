@@ -54,10 +54,10 @@ def second_order(H, double_qp, metric_params, step_size, omega):
 
 
 def forth_order(H, double_qp, metric_params, step_size, omega):
-    gamma = 1/(2 - 2 ** 0.2)
+    gamma = 1./(2 - 2 ** 0.2)
 
     flow_r = second_order(H, double_qp, metric_params, (step_size * gamma), omega)
-    flow_m = second_order(H, flow_r, metric_params, (step_size * (1 - 2 * gamma)), omega)
+    flow_m = second_order(H, flow_r, metric_params, (step_size * (1. - 2 * gamma)), omega)
     flow_l = second_order(H, flow_m, metric_params, (step_size * gamma), omega)
 
     return flow_l

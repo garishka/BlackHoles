@@ -51,16 +51,16 @@ import numba
 
 from geodesic_integration_kerr.integrator import symplectic_integrator
 
-res = 14
-r0 = 500
+res = 71
+r0 = 50
 th0 = np.pi/2
 a0 = 0.99
-alpha_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
-beta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
+alpha_values = np.linspace(-5e-2*np.pi, 5e-2*np.pi, res)
+beta_values = np.linspace((1-5e-2)*np.pi, (1+5e-2)*np.pi, res)
 
-step = 0.4
+step = 0.3
 omg = 1.
-steps = 6_000
+steps = 2_500
 
 r_plus = 1. + np.sqrt(1 - a0 ** 2)
 
@@ -120,9 +120,9 @@ def init_p(r: float, th: float, a: float, alpha_i: float, beta_i: float):
     p_th = np.sqrt(g22(r, th, a)) * np.sin(alpha_i)
     p_r = np.sqrt(g11(r, th, a)) * np.cos(beta_i) * np.cos(alpha_i)
     L = np.sqrt(g33(r, th, a)) * np.sin(beta_i) * np.cos(alpha_i)
-    E = (1 + gamma_g * np.sqrt(g33(r, th, a)) * np.sin(beta_i) * np.cos(alpha_i)) / zeta
+    mE = -(1 + gamma_g * np.sqrt(g33(r, th, a)) * np.sin(beta_i) * np.cos(alpha_i)) / zeta
 
-    return [E, p_r, p_th, L]
+    return [mE, p_r, p_th, L]
 
 
 #@numba.jit Cannot determine Numba type of <class 'function'>
@@ -130,7 +130,7 @@ def solve_ivp_(i, j):
     logging.info(f"Processing pixel ({i}, {j})")
 
     p0 = init_p(r0, th0, a0, alpha_values[i], beta_values[j])
-    qp = np.asarray(([0, r0, th0, 0] + p0))
+    qp = np.asarray(([10**(-7), r0, th0, 10**(-7)] + p0))
 
     results = symplectic_integrator(hamiltonian, qp, [a0], step, omg, steps, 4)
 

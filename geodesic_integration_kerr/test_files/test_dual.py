@@ -127,6 +127,47 @@ class TestPartialDerivative(unittest.TestCase):
             dfdz = df4dz(var)
             self.assertEqual(dual.partial_deriv(f4, var, 2), dfdz)
 
+    def test_partial_deriv5(self):
+        def f5(vars, params):
+            x, y, z = vars
+            a, b = params
+            return 2 * a * x**2 + np.sin(b * y) + z
+
+        def df5dx(vars, params):
+            x, y, z = vars
+            a, b = params
+            return 4 * a * x
+
+        def df5dy(vars, params):
+            x, y, z = vars
+            a, b = params
+            return b * np.cos(b * y)
+
+        def df5dz(vars, params):
+            x, y, z = vars
+            a, b = params
+            return 1
+
+        nums = [random.randint(0, 100) for i in range(10)]
+
+        for i in range(10):
+            x5 = nums[random.randint(0, len(nums) - 1)]
+            y5 = nums[random.randint(0, len(nums) - 1)]
+            z5 = nums[random.randint(0, len(nums) - 1)]
+            a5 = nums[random.randint(0, len(nums) - 1)]
+            b5 = nums[random.randint(0, len(nums) - 1)]
+            var = [x5, y5, z5]
+            param = [a5, b5]
+
+            dfdx = df5dx(var, param)
+            self.assertEqual(dual.partial_deriv(f5, var, 0, param), dfdx)
+
+            dfdy = df5dy(var, param)
+            self.assertEqual(dual.partial_deriv(f5, var, 1, param), dfdy)
+
+            dfdz = df5dz(var, param)
+            self.assertEqual(dual.partial_deriv(f5, var, 2, param), dfdz)
+
 
 class TestJacobian(unittest.TestCase):
     def test_polar_to_cartesian(self):
