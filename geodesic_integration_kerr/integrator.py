@@ -2,42 +2,51 @@ import numpy as np
 from geodesic_integration_kerr import dual
 
 
-# molei tao, doi: 10.1103/PhysRevE.94.043303
+# Molei Tao, doi: 10.1103/PhysRevE.94.043303
 def _flow_A(H, double_qp, metric_params, step):
     double_copy = double_qp.copy()
-    qy = np.concatenate((double_copy[:4], double_copy[12:]), axis=0)
+    dim = len(double_qp)
+    if dim % 4 != 0:
+        raise ValueError("Wrong dimensionality of initial conditions!")
+    qy = np.concatenate((double_copy[:int(0.25*dim)], double_copy[int(0.75*dim):]), axis=0)
 
-    for i in range(4):
-        double_qp[4+i] -= step * dual.partial_deriv(H, qy, i, *metric_params)
-        double_qp[8+i] += step * dual.partial_deriv(H, qy, i+4, *metric_params)
+    for i in range(int(0.25*dim)):
+        double_qp[int(0.25*dim)+i] -= step * dual.partial_deriv(H, qy, i, *metric_params)
+        double_qp[int(0.5*dim)+i] += step * dual.partial_deriv(H, qy, i+int(0.25*dim), *metric_params)
 
     return double_qp
 
 
 def _flow_B(H, double_qp, metric_params, step):
     double_copy = double_qp.copy()
-    xp = np.concatenate((double_copy[8:12], double_copy[4:8]))
+    dim = len(double_qp)
+    if dim % 4 != 0:
+        raise ValueError("Wrong dimensionality of initial conditions!")
+    xp = np.concatenate((double_copy[int(0.5*dim):int(0.75*dim)], double_copy[int(0.25*dim):int(0.5*dim)]))
 
-    for i in range(4):
-        double_qp[i] += step * dual.partial_deriv(H, xp, i+4, *metric_params)
-        double_qp[12+i] -= step * dual.partial_deriv(H, xp, i, *metric_params)
+    for i in range(int(0.25*dim)):
+        double_qp[i] += step * dual.partial_deriv(H, xp, i+int(0.25*dim), *metric_params)
+        double_qp[int(0.75*dim)+i] -= step * dual.partial_deriv(H, xp, i, *metric_params)
 
     return double_qp
 
 
 def _flow_C(double_qp, step, omega):
     double_copy = double_qp.copy()
-    qp = double_copy[:8]
-    xy = double_copy[8:]
+    dim = len(double_qp)
+    if dim % 4 != 0:
+        raise ValueError("Wrong dimensionality of initial conditions!")
+    qp = double_copy[:int(0.5*dim)]
+    xy = double_copy[int(0.5*dim):]
 
-    I = np.identity(4, dtype=float)
+    I = np.identity(int(0.25*dim), dtype=float)
     ul = lr = np.cos(2 * omega * step) * I
     ur = np.sin(2 * omega * step) * I
     ll = - ur
     R = np.block([[ul, ur], [ll, lr]])
 
-    double_qp[:8] = 0.5 * (qp + xy) + 0.5 * R @ (qp - xy)
-    double_qp[8:] = 0.5 * (qp + xy) - 0.5 * R @ (qp - xy)
+    double_qp[:int(0.5*dim)] = 0.5 * (qp + xy) + 0.5 * R @ (qp - xy)
+    double_qp[int(0.5*dim):] = 0.5 * (qp + xy) - 0.5 * R @ (qp - xy)
 
     return double_qp
 
