@@ -138,8 +138,6 @@ def solve_ivp_(i, j):
         # Δr за данните?
         if results[1, k] <= r_plus:
             # The light ray falls into the black hole; return the values of the pixel that has to be set black
-            # С concurrent.futures.ProcessPoolExecutor() не знам как да акумулира промените вместо да създава нова
-            # картинка на всеки 7-8 процеса -> създавам картинката в __main__ частта
             return True, (i, j)
     return False, (i, j)
 
