@@ -51,16 +51,16 @@ import numba
 
 from geodesic_integration_kerr.integrator import symplectic_integrator
 
-res = 71
-r0 = 50
+res = 81
+r0 = 60.
 th0 = np.pi/2
 a0 = 0.99
 alpha_values = np.linspace(-5e-2*np.pi, 5e-2*np.pi, res)
 beta_values = np.linspace((1-5e-2)*np.pi, (1+5e-2)*np.pi, res)
 
 step = 0.3
-omg = 1.
-steps = 2_500
+omg = 0.85
+steps = 3_500
 
 r_plus = 1. + np.sqrt(1 - a0 ** 2)
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
             d, b = coords
             if fallen:
-                pixels[b, res - 1 - d] = (0, 0, 0)
+                pixels[b, d] = (0, 0, 0)
             #else:
             #    pixels[b, res - 1 - d] = (255, 255, 255)
 
