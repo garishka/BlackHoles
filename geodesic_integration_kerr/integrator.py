@@ -66,7 +66,7 @@ def forth_order(H, double_qp, metric_params, step_size, omega):
     gamma = 1./(2 - 2 ** 0.2)
 
     flow_r = second_order(H, double_qp, metric_params, (step_size * gamma), omega)
-    flow_m = second_order(H, flow_r, metric_params, (step_size * (1. - 2 * gamma)), omega)
+    flow_m = second_order(H, flow_r, metric_params, (step_size * (1. - 2. * gamma)), omega)
     flow_l = second_order(H, flow_m, metric_params, (step_size * gamma), omega)
 
     return flow_l
@@ -79,12 +79,10 @@ def symplectic_integrator(H, qp0, metric_params, step_size: float, omega: float,
 
     if ord == 2:
         for i in range(1, num_steps):
-            current_qp = second_order(H, results[i-1], metric_params, step_size, omega)
-            results[i] = current_qp
+            results[i] = second_order(H, results[i-1], metric_params, step_size, omega)
     elif ord == 4:
         for i in range(1, num_steps):
-            current_qp = forth_order(H, results[i-1], metric_params, step_size, omega)
-            results[i] = current_qp
+            results[i] = forth_order(H, results[i-1], metric_params, step_size, omega)
 
     results_T = np.transpose(results)
 
