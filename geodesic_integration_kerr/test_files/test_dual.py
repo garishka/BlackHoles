@@ -23,7 +23,7 @@ class TestPartialDerivative(unittest.TestCase):
             x, y, z = vars
             return - 2 * z
 
-        nums = [0, 1, -1, 10, 5, 6, -100, 46]
+        nums = [0., 1., -1., 10., 5., 6., -100., 46.]
 
         for i in range(10):
             x1 = nums[random.randint(0, len(nums) - 1)]
@@ -57,7 +57,7 @@ class TestPartialDerivative(unittest.TestCase):
             x, y, z = vars
             return - 2 * x * np.sin(y) * np.sin(z)
 
-        nums = [0, 1, -1, 10, 5, 6, -100, 46]
+        nums = [0., 1., -1., 10., 5., 6., -100., 46.]
 
         for i in range(10):
             x2 = nums[random.randint(0, len(nums) - 1)]
@@ -79,7 +79,7 @@ class TestPartialDerivative(unittest.TestCase):
             x, y, z = vars
             return 5
 
-        nums = [0, 1, -1, 10, 5, 6, -100, 46]
+        nums = [0., 1., -1., 10., 5., 6., -100., 46.]
 
         for i in range(10):
             x3 = nums[random.randint(0, len(nums) - 1)]
@@ -110,7 +110,7 @@ class TestPartialDerivative(unittest.TestCase):
             x, y, z = vars
             return - f4(vars)
 
-        nums = [0, 1, -1, 10, 5, 6, -100, 46]
+        nums = [0., 1.45, -1.0001, 10., 5., 6., -100., 46.]
 
         for i in range(10):
             x4 = nums[random.randint(0, len(nums) - 1)]
@@ -216,7 +216,6 @@ class TestJacobian(unittest.TestCase):
             calculated_jacobian = dual.jacobian([x, y, z], [r[i], phi[i], theta[i]])
 
             np.testing.assert_allclose(calculated_jacobian, expected_jacobian, atol=1e-7)
-
 
 
 if __name__ == '__main__':
