@@ -1,6 +1,5 @@
 import numpy as np
 
-# това не е вярно в момента
 a = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                 [1 / 5, 0, 0, 0, 0, 0, 0],
                 [3 / 40, 9 / 40, 0, 0, 0, 0, 0],
@@ -15,19 +14,29 @@ b4 = np.asarray([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0], 
 b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40], dtype=float)
 
 
-def kdp45(func, init, h, rng, rtot, num_iter):
-    x = np.zeros(shape=num_iter)
-    y = np.zeros(shape=num_iter)
-    x[0] = init[0]
-    y[0] = init[1]
+# func(t, qp, *params)
+# init = (q0, p0)
+def kdp45(func, init, t_init, h_init, num_iter, params):
+    t = np.zeros(shape=num_iter)
+    y = np.zeros(shape=(num_iter, 2*len(init)))
+    t[0] = t_init
+    y[0] = init
 
-    k = np.zeros(shape=len(init))
+    k = np.zeros(shape=7, dtype=float)
+    h = h_init
 
-    for j in range(num_iter):
-        k[0] = h * func(x[0], y[0])
+    for j in range(1, num_iter):
+        t[j] = t[j-1] + h
         for i in range(1, 7):
-            k[i] = h * func(x[i] + h * c[i], y[i] + a[i] @ k)
+            k[i] = h * func(t[j-1] + h * c[i], y[j-1, :len(init)] + a[i] @ k, params)
 
-        y[j] = y[j-1] + b4 @ k
-        y[j] = y[j-1] + b5 @ k
+        y[j, :len(init)] = y[j-1, :len(init)] + b4 @ k
+        y[j, len(init):] = y[j-1, :len(init)] + b5 @ k
 
+        dif = np.abs(y[j, :len(init)] - y[j, len(init):])
+        # p47, "Numerical Methods" Jeffrey R. Chasnov (lecture notes adapted for Coursera)
+        s = (1e-4 / dif) ** 0.2      # какво е това ϵ във формулата -> desired error tolerance
+        h *= s
+
+    y = y.transpose()
+    return t, y
