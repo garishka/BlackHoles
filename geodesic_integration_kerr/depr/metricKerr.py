@@ -1,6 +1,5 @@
 import numpy as np
 from typing import Union
-from dual import DualNumber, derivative
 
 
 def sigma_expr(r, theta, alpha):

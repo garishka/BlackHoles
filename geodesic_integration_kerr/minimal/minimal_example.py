@@ -47,7 +47,6 @@ import numpy as np
 from PIL import Image, ImageDraw
 import time
 import concurrent.futures
-import numba
 
 from geodesic_integration_kerr.integrator import symplectic_integrator
 

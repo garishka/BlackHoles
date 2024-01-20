@@ -1,8 +1,6 @@
 # c = G = M = 1
 import numpy as np
-from typing import Union
-from dual import DualNumber, derivative
-import metricKerr
+from geodesic_integration_kerr.depr import metricKerr
 
 
 # TODO: да добавя възможност за времеподобни геодезични

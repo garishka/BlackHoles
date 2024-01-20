@@ -1,8 +1,8 @@
 import numpy as np
 from typing import Callable, Union, List
 import warnings
-from numba.experimental import jitclass
-import numba
+#from numba.experimental import jitclass
+#import numba
 
 
 # Този клас е практически същият като от статията - просто си добавих docstring и преименувах неща, за да ми е

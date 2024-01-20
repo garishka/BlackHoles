@@ -139,7 +139,7 @@ draw = ImageDraw.Draw(image)
 pixels = image.load()
 
 # Load an image used for the celestial sphere background
-background = Image.open("background/patterned_circles.png")
+background = Image.open("../background/patterned_circles.png")
 px_bg = background.load()
 
 counter = 0
