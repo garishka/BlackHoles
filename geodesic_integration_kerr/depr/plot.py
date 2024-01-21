@@ -1,9 +1,11 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import geodesics
-from scipy.integrate import solve_ivp
 from PIL import Image, ImageDraw
+
+import geodesics
+import metricKerr
+from geodesic_integration_kerr.kdp_integrator import kdp45
 
 # image resolution
 res = 50
@@ -123,11 +125,11 @@ gamma_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
 beta, gamma = np.meshgrid(beta_values, gamma_values)
 
 # Define a Kerr black hole with spin parameter α = 0.99
-black_hole = geodesics.KerrBlackHole(alpha=0.99)
+black_hole = metricKerr.KerrBlackHole(alpha=0.99)
 r_plus = black_hole.r_plus()
 
 # Set the observer's position to (r, θ, ϕ) = (15, π, 0), a.k.a default position
-obs = geodesics.Observer()
+obs = metricKerr.Observer()
 init_q = obs.coord()
 
 # Impact parameters (np.ndarray), calculated at every angle (γ, β)
@@ -154,11 +156,16 @@ for i in range(len(beta)):
         ivp[1:3] = init_q
         ivp[4:] = init_p
 
-        sol = solve_ivp(geo.hamilton_eqs, [0, -10000], ivp, t_eval=np.linspace(0, -10000, 50000))
-
+        sol = kdp45(func=geo.hamilton_eqs,
+                    init=ivp,
+                    t_init=0.,
+                    h_init=5.,
+                    num_iter=10_000)
+        print(sol)      # може да има проблеми с нулеви начални стойности, щото гърми
         # Temporary print statement for debugging
         print(i, j)
 
+        # това надолу не е вярно, но ме мързи сега да го оправям
         # Check if the light ray falls into the black hole; if not, map it to the celestial sphere
         for k in range(len(sol.y[1])):
             # TODO: да направя оценка на Δr

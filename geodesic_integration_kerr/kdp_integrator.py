@@ -28,17 +28,16 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
         if len(params) < (len(inspect.signature(func).parameters)-2):
             raise TypeError("Check your parameter names. Something is wrong.")
 
-
-    t = np.zeros(shape=num_iter)
+    t = np.zeros(shape=(num_iter, len(init)))
     y = np.zeros(shape=(num_iter, 2*len(init)))
-    t[0] = t_init
-    y[0] = init
+    t[0] = np.tile(t_init, len(init))
+    y[0] = np.tile(init, 2)
 
-    k = np.zeros(shape=7, dtype=float)
-    h = h_init
+    k = np.zeros(shape=(7, len(init)), dtype=float)
+    h = np.tile(h_init, len(init))
 
     for j in range(1, num_iter):
-        t[j] = t[j-1] + h
+        t[j, :] = t[j-1, :] + h
         for i in range(1, 7):
             k[i] = h * func(t[j-1] + h * c[i], y[j-1, :len(init)] + a[i] @ k, *params.values())
 
@@ -47,7 +46,7 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
 
         dif = np.abs(y[j, :len(init)] - y[j, len(init):])
         # p47, "Numerical Methods" Jeffrey R. Chasnov (lecture notes adapted for Coursera)
-        s = (1e-4 / dif) ** 0.2      # какво е това ϵ във формулата -> desired error tolerance
+        s = (1e-4 / dif) ** 0.2     # какво е това ϵ във формулата -> desired error tolerance
         h *= s
 
     y = y.transpose()
