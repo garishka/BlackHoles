@@ -82,8 +82,8 @@ class Geodesics:
         g = metricKerr.contra_Kerr_metric(self.position, alpha)
 
         # за фотони
-        tH = g[0, 0] * p_t ** 2 + g[1, 1] * p_r ** 2 + g[2, 2] * p_th ** 2 + g[0, 3] * p_phi * p_t + g[3, 3] * p_phi ** 2
-        H = tH / 2
+        H = 0.5 * (g[0, 0] * p_t ** 2 + g[1, 1] * p_r ** 2 + g[2, 2] * p_th ** 2
+                   + g[0, 3] * p_phi * p_t + g[3, 3] * p_phi ** 2)
 
         return H
 
@@ -120,12 +120,12 @@ class Geodesics:
         dzdl[2] = g[2, 2] * p_th
         dzdl[3] = g[0, 3] * E + g[3, 3] * L
 
-        dzdl[4] = 0
+        dzdl[4] = 1e-15     # trying if a very small number ≠0 would be better for numerical computations
         dzdl[5] = - 0.5 * (dgdr[0, 0] * E ** 2 + dgdr[0, 3] * E * L + dgdr[1, 1] * p_r ** 2 + dgdr[2, 2] * p_th ** 2
                            + dgdr[3, 3] * L ** 2)
         dzdl[6] = - 0.5 * (dgdth[0, 0] * E ** 2 + dgdth[0, 3] * E * L + dgdth[1, 1] * p_r ** 2 + dgdth[2, 2] * p_th ** 2
                            + dgdth[3, 3] * L ** 2)
-        dzdl[7] = 0
+        dzdl[7] = 1e-15
 
         return dzdl
 

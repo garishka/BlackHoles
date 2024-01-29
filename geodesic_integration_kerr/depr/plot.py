@@ -2,6 +2,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
+from typing import Union, List
 
 import geodesics
 import metricKerr
@@ -26,7 +27,7 @@ LaTeX = {
 plt.rcParams.update(LaTeX)
 
 
-def discretize_angles(angles: list, resolution: int, interval=np.pi):
+def discretize_angles(angles: Union[np.ndarray, list], resolution: int, interval: Union[float, np.ndarray, List]):
     """
     Discretize a list of angle values based on the specified resolution and interval.
 
@@ -57,15 +58,18 @@ def discretize_angles(angles: list, resolution: int, interval=np.pi):
     >>> discretize_angles(angles, resolution, interval)
     (array([0.62831853, 1.57079633, 2.51327412]), 0.3141592653589793)
     """
-    delta = interval / resolution
-    angles = np.array(angles)
+    if type(interval) == float:
+        delta = interval / resolution
+    else:
+        delta = (interval[-1]-interval[0])/resolution
 
+    angles = np.array(angles)
     disc_angles = np.round(angles / delta) * delta
 
     return disc_angles, delta
 
 
-def map_angle_to_pixel(theta: float, phi: float, resolution: int):
+def map_angle_to_pixel(theta: float, phi: float, resolution: int, intervals: Union[np.ndarray, List]):
     """
     Map spherical coordinates (θ, ϕ) to pixel coordinates on an image.
 
@@ -84,17 +88,17 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int):
         A list of image coordinates corresponding to the given spherical coordinates (θ, ϕ).
     """
     # Generate a grid for the celestial sphere
-    theta_values = np.linspace(0, np.pi, resolution)
-    phi_values = np.linspace(0, 2 * np.pi, resolution)
+    theta_values = np.linspace(intervals[0][0], intervals[0][1], resolution)
+    phi_values = np.linspace(intervals[1][0], intervals[1][1], resolution)
     theta_grid, phi_grid = np.meshgrid(theta_values, phi_values)
 
     # Adjust θ if it's negative
     if theta < 0:
-        theta = np.pi - theta
+        theta = 2 * np.pi - theta
 
     # Discretize input angles
-    discretized_theta, delta_theta = discretize_angles([theta], resolution)
-    discretized_phi, delta_phi = discretize_angles([phi], resolution, interval=2 * np.pi)
+    discretized_theta, delta_theta = discretize_angles(theta, resolution, intervals[0])
+    discretized_phi, delta_phi = discretize_angles(phi, resolution, interval=intervals[1])
 
     # Find indices where the discretized angles match the meshgrid values
     indices = np.column_stack(np.where(np.isclose(theta_grid, discretized_theta, atol=delta_theta) &
@@ -109,11 +113,13 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int):
         closest_index = indices
 
     # for debugging
-    print("Input Coordinates:", theta, phi)
-    print("Discretized Coordinates:", discretized_theta, discretized_phi)
-    print("Grid Points:")
-    print("Theta:", theta_values)
-    print("Phi:", phi_values)
+    # print("Input Coordinates:", theta, phi)
+    # print("Delta theta:", delta_theta)
+    # print("Delta Phi:", delta_phi)
+    # print("Discretized Coordinates:", discretized_theta, discretized_phi)
+    # print("Grid Points:")
+    # print("Theta:", theta_values)
+    # print("Phi:", phi_values)
 
     return closest_index.tolist()
 
@@ -128,7 +134,7 @@ beta, gamma = np.meshgrid(beta_values, gamma_values)
 black_hole = metricKerr.KerrBlackHole(alpha=0.99)
 r_plus = black_hole.r_plus()
 
-# Set the observer's position to (r, θ, ϕ) = (15, π, 0), a.k.a default position
+# Set the observer's position to (r, θ, ϕ) = (500, π, 0), a.k.a default position
 obs = metricKerr.Observer()
 init_q = obs.coord()
 
@@ -156,32 +162,33 @@ for i in range(len(beta)):
         ivp[1:3] = init_q
         ivp[4:] = init_p
 
-        sol = kdp45(func=geo.hamilton_eqs,
+        tau, z = kdp45(func=geo.hamilton_eqs,
                     init=ivp,
                     t_init=0.,
-                    h_init=5.,
-                    num_iter=10_000)
-        print(sol)      # може да има проблеми с нулеви начални стойности, щото гърми
+                    h_init=.8,
+                    num_iter=100_000)
+        print(z)      # може да има проблеми с нулеви начални стойности, щото гърми
         # Temporary print statement for debugging
         print(i, j)
 
         # това надолу не е вярно, но ме мързи сега да го оправям
         # Check if the light ray falls into the black hole; if not, map it to the celestial sphere
-        for k in range(len(sol.y[1])):
+        for k in range(len(z[1])):
             # TODO: да направя оценка на Δr
             # TODO: да поправя условието за падане в дупката
-            if abs(sol.y[1, k]) <= r_plus + 1e-1:   # <- много грешно
+            if z[1, k] <= r_plus + 1e-1:
                 # The light ray falls into the black hole; set the pixel to black
                 pixels[i, j] = (0, 0, 0)
                 print("yeeeeet")
                 break
             # временно, в събота имаше проблеми с интегрирането
             try:
-                if abs(abs(sol.y[1, k]) - 30) < 1e-1:
+                if abs(z[1, k] - obs.coord()[0]) < 1e-1:
                     # Light ray hits the celestial sphere; map it to a pixel on the background image
-                    coord = np.asarray([sol.y[2, k], sol.y[3, k]]) / np.pi
+                    coord = np.asarray([z[2, k] % (2 * np.pi), z[3, k] % np.pi])
                     print(coord)
-                    px_coord = map_angle_to_pixel(coord[0], coord[1], res)
+                    px_coord = map_angle_to_pixel(coord[0], coord[1], res,
+                                                  [[-np.pi/2, np.pi/2], [-np.pi/2, np.pi/2]])
                     print(px_coord)
                     pixels[i, j] = px_bg[px_coord[0], px_coord[1]]
                     # TODO: да свържа пикселите с импакт параметрите
