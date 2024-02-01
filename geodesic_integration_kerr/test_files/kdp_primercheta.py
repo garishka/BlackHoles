@@ -29,12 +29,12 @@ print(inspect.signature(kdp45))
 
 t_per, y_per = kdp45(func=periodic_uwu,
                      init=[.8],
-                     t_init=0,
-                     h_init=0.1,
-                     num_iter=100,
+                     t_init=0.,
+                     h_init=0.01,
+                     num_iter=200,
                      params=5)
 
-t = np.linspace(t_per[0], t_per[-1], 200)
+t = np.linspace(t_per[0], t_per[-1], 2000)
 anl_per = - np.cos(5 * t) + 1.8
 
 
@@ -43,9 +43,9 @@ def polynomial(t, y, d, e):
 
 
 t_poly, y_poly = kdp45(func=polynomial,
-                       init=[4.5],
-                       t_init=4.,
-                       h_init=0.1,
+                       init=[.5],
+                       t_init=0.,
+                       h_init=0.001,
                        num_iter=500,
                        e=2.3,
                        d=2.4,       # останалите параметри ще бъдат махнати
@@ -56,7 +56,7 @@ t_poly, y_poly = kdp45(func=polynomial,
 anl_poly = 2.3 / 4 * t_poly ** 4 + 2.3 / 6 * t_poly ** 3 - 0.5 * t_poly ** 2 - 159.733333333
 
 fig, ax = plt.subplots()
-ax.scatter(t_poly, y_poly[0], color="red")
-ax.plot(t_poly, anl_poly, color="black")
+ax.scatter(t_per, y_per[0], color="red")
+ax.plot(t, anl_per, color="black")
 #ax.scatter(t_exp, y_exp[1], color="blue")
 plt.show()
