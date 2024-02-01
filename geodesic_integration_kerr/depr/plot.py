@@ -124,11 +124,29 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int, intervals: Uni
     return closest_index.tolist()
 
 
-# Generate a grid of angle values (β, γ) for the observer's viewpoint
+def map_celestial(angles: tuple, obs_r: float, cs_r: float):
+    # Cunha, p.121
+    th, phi = angles
+    R = np.sqrt(obs_r ** 2 + cs_r ** 2 - 2 * obs_r * cs_r * np.sin(th) * np.cos(phi))
+
+    alpha = np.arcsin(cs_r * np.cos(th) / R)
+    a = - (cs_r * np.sin(th) * np.sin(phi)) / (R * np.cos(alpha))
+    b = (obs_r - cs_r * np.sin(th) * np.cos(phi)) / (R * np.cos(alpha))
+
+    if b >= 0:
+        beta = np.arcsin(a)
+    elif (b < 0) and (a >= 0):
+        beta = np.pi - np.arcsin(a)
+    else:
+        beta = -np.pi - np.arcsin(a)
+
+    return alpha, beta
+
+# Generate a grid of angle values (δ, γ) for the observer's viewpoint
 # This grid might be adjusted for small angles since the entire calculation for x and y relies on this.
-beta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
+delta_values = np.linspace((1-5e-3)*np.pi, (1+5e-3)*np.pi, res)
 gamma_values = np.linspace(-5e-3*np.pi, 5e-3*np.pi, res)
-beta, gamma = np.meshgrid(beta_values, gamma_values)
+delta, gamma = np.meshgrid(delta_values, gamma_values)
 
 # Define a Kerr black hole with spin parameter α = 0.99
 black_hole = metricKerr.KerrBlackHole(alpha=0.99)
@@ -139,7 +157,7 @@ obs = metricKerr.Observer()
 init_q = obs.coord()
 
 # Impact parameters (np.ndarray), calculated at every angle (γ, β)
-x, y = obs.impact_params(a1=gamma_values, a2=beta_values)
+x, y = obs.impact_params(a1=gamma_values, a2=delta_values)
 
 # Create an empty white image with a resolution of res
 image = Image.new("RGB", (res, res), "white")
@@ -152,10 +170,10 @@ px_bg = background.load()
 
 counter = 0
 # Loop through each (β, γ) coordinate on the observer's plane
-for i in range(len(beta)):
+for i in range(len(delta)):
     for j in range(len(gamma)):
         # Solve the geodesic equations for the current (β, γ) with given initial conditions
-        init_p = obs.p_init(gamma[i, j], beta[i, j])
+        init_p = obs.p_init(gamma[i, j], delta[i, j])
         geo = geodesics.Geodesics(init_q, init_p, [0.99])
 
         ivp = np.zeros(shape=8, dtype=float)
