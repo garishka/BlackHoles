@@ -2,6 +2,9 @@ import numpy as np
 from typing import Callable, Union, List
 import inspect
 import warnings
+from dataclasses import dataclass
+
+########################################## BUTCHER TABLEAU #############################################################
 
 a = np.asarray([[0, 0, 0, 0, 0, 0, 0],
                 [1 / 5, 0, 0, 0, 0, 0, 0],
@@ -16,10 +19,27 @@ c = np.asarray([0, 0.2, 0.3, 0.8, 8 / 9, 1, 1], dtype=float)
 b4 = np.asarray([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0], dtype=float)
 b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40], dtype=float)
 
+################################### ACCURACY AND ERRORS ################################################################
+
+KDP_ACCURACY = 1e-4
+EPSILON = 1e-16
+
+
+@dataclass
+class StepErrors:
+    cur_err: float
+    prev_err: float
+    sec_prev_err: float
+
+
+err = StepErrors(KDP_ACCURACY, KDP_ACCURACY, KDP_ACCURACY)  # това изглежда мега тъпо като решение
+
+
+#################################### DORMAND-PRINCE, uwu ###############################################################
 
 # func(t, qp, *params)
 # init = (q0, p0)
-def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: float, num_iter: int, **params):
+def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: float, num_iter: int, **params) -> tuple:
 
     if len(params) > (len(inspect.signature(func).parameters)-2):       # -2 за компенсиране на t, y
         warnings.warn("The number of parameters given exceeds the number of positional arguments. "
@@ -44,19 +64,22 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
         y[j, len(init):] = y[j-1, :len(init)] + b5 @ k
 
         dif = np.max(np.abs(y[j, :len(init)] - y[j, len(init):]))
+        err.sec_prev_err = err.prev_err
+        err.prev_err = err.cur_err
+        err.cur_err = dif
 
         # p47, "Numerical Methods" Jeffrey R. Chasnov (lecture notes adapted for Coursera)
-        #s = (1e-4 / dif) ** 0.2     # какво е това ϵ във формулата -> desired error tolerance
+        # s = (1e-4 / dif) ** 0.2     # какво е това ϵ във формулата -> desired error tolerance
 
-        if dif < 1e-4:
+        if dif < KDP_ACCURACY:
             t[j] = t[j-1] + h
-            s = 0.8 * (1e-4 / (dif + 1e-10)) ** 0.2
-            h *= s
+            h *= (KDP_ACCURACY / (err.cur_err + EPSILON)) ** (0.58 / 5)
+            h *= (KDP_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
+            h *= (KDP_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
         else:
             t[j] = t[j-1]
             y[j, :] = y[j-1, :]
-            s = 0.8 * (1e-4 / (dif + 1e-10)) ** 0.25
-            h *= s
+            h *= 0.8 * (KDP_ACCURACY / (err.cur_err + 1e-10)) ** 0.25
 
     y = y.transpose()
     return t, y
