@@ -3,14 +3,13 @@ import numpy as np
 from geodesic_integration_kerr.depr import metricKerr
 
 
-# TODO: да добавя възможност за времеподобни геодезични
-class Geodesics:
+class KerrGeodesics:
     def __init__(self,  position, momentum, metric_params=[0.99, 0], null=True):
         """
         Constructor
 
-        Parameters
-        ----------
+        Parameters:
+        ------------
         metric_params: array-like
             Tuple of parameters to pass to the metric.
             param[0] = alpha, the spin parameter of the black hole.
@@ -27,7 +26,6 @@ class Geodesics:
         self.momentum = momentum
         self.null = null
 
-    # това най-вероятно ще стане ненужно с писането на integrator.py
     def dgdtheta(self):
         # Calculate and return the derivative of the geodesic components with respect to the polar angle (θ).
         alpha = self.m_params[0]
@@ -36,14 +34,7 @@ class Geodesics:
         A = metricKerr.A_expr(r, th, alpha)
         delta = metricKerr.delta_expr(r, alpha)
 
-        #dual_t = DualNumber(0, 0)
-        #dual_r = DualNumber(r, 0)
-        #dual_th = DualNumber(th, 0)
-        #dual_phi = DualNumber(phi, 0)
-
         dgdth = np.zeros(shape=(4, 4), dtype=float)
-
-        #dgdth = derivative(lambda p: Kerr_metric([dual_r,p,dual_phi], alpha), dual_th)
 
         dgdth[0, 0] = 2 * r * alpha ** 2 * np.sin(2 * th) / sigma ** 2
         dgdth[0, 3] = dgdth[3, 0] = - 4 * r * alpha * np.sin(2 * th) * (1 - (alpha * np.sin(th) ** 2) / sigma) / sigma
@@ -87,8 +78,7 @@ class Geodesics:
 
         return H
 
-    # TODO: да добавя начин за проверка на запазването на енергията и момента на импулса
-    # това дава грешни резултати с solve_ivp -> трябва да опитам нещо друго
+    # TODO: да добавя начин за проверка на запазването на енергията и момента на импулсаl
     def hamilton_eqs(self, l: float, qp: np.ndarray) -> np.ndarray:
         """
         Calculate and return the Hamiltonian equations for the geodesic motion.
@@ -107,9 +97,10 @@ class Geodesics:
             List of Hamiltonian equations for the geodesic motion.
             The equations represent the evolution of the geodesic coordinates and momenta over the affine parameter l.
         """
-        E, p_r, p_th, L = self.momentum
+        t, r, th, phi = qp[:4]
+        E, p_r, p_th, L = qp[4:]
         alpha = self.m_params[0]
-        g = metricKerr.Kerr_metric(self.position, alpha)
+        g = metricKerr.Kerr_metric((r, th), alpha)
         dgdth = self.dgdtheta()
         dgdr = self.dgdr()
 
