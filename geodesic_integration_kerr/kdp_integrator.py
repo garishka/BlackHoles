@@ -56,7 +56,6 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
 
     k = np.zeros(shape=(7, len(init)), dtype=float)
 
-    retard = 0
     for j in range(1, num_iter):
         for i in range(7):
             k[i] = h * func(t[j-1] + h * c[i], y[j-1, :len(init)] + np.dot(a[i], k), *params.values())
@@ -77,13 +76,11 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
             h *= (KDP_ACCURACY / (err.cur_err + EPSILON)) ** (0.58 / 5)
             h *= (KDP_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
             h *= (KDP_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
-            retard += 1
         else:
             t[j] = t[j-1]
             y[j, :] = y[j-1, :]
             h *= 0.8 * (KDP_ACCURACY / (err.cur_err + 1e-10)) ** 0.25
             j -= 1
-            retard += 1
 
     y = y.transpose()
-    return t, y, retard
+    return t, y

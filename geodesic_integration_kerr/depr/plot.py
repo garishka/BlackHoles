@@ -46,7 +46,7 @@ for i in range(len(delta)):
         ivp[1:3] = init_q
         ivp[4:] = init_p
 
-        tau, z, retard = kdp45(func=geo.hamilton_eqs,
+        tau, z = kdp45(func=geo.hamilton_eqs,
                        init=ivp,
                        t_init=1e-10,
                        h_init=.9,  # няма значение каква е стъпката, приближава се много бавно, не знам дали ще доживея
@@ -55,7 +55,6 @@ for i in range(len(delta)):
         print(i, j)
         print(tau)
         print(len(z[0]))
-        print(retard)
         print(z)
 
         # това надолу не е вярно, но ме мързи сега да го оправям
