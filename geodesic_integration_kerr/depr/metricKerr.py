@@ -72,7 +72,7 @@ def Kerr_metric(x_vec, *params):
     Parameters:
     -----------
     x_vec : array-like
-        3-position in the form (r, θ, ϕ).
+        position in the form (r, θ).
     params : array-like, optional
         List of parameters. By default, params[0]=α, the spin parameter.
 
@@ -106,14 +106,14 @@ def contra_Kerr_metric(x_vec, *params):
     Parameters:
     -----------
     x_vec : array-like
-        3-position in the form (r, θ, ϕ).
+        position in the form (r, θ).
     params : array-like, optional
         List of parameters. By default, params[0]=α, the spin parameter.
 
     Returns:
     -----------
     np.ndarray
-        A (4, 4) array representing the contravariant metric components.
+        A (4, 4) array representing the contravariant metric components in Boyer-Lindquist coordinates.
     """
     #r, th = x_vec
     #alpha = params[0]
@@ -131,43 +131,3 @@ def contra_Kerr_metric(x_vec, *params):
     #g[2, 2] = 1 / sigma
 
     return np.linalg.inv(Kerr_metric(x_vec, *params))
-
-
-class KerrBlackHole:
-    """
-    Represents a Kerr black hole with a specified spin parameter.
-
-    Parameters:
-    -----------
-    alpha : float
-        Spin parameter of the Kerr black hole. Must be in the open interval (-1, 1).
-
-    Methods:
-    -----------
-    __str__():
-        Return a string representation of the KerrBlackHole instance.
-
-    r_plus() -> float:
-        Return the radius of the event horizon for the Kerr black hole with the given spin parameter.
-    """
-    def __init__(self, alpha: float):
-        """
-                Initialize a KerrBlackHole instance with the specified spin parameter.
-
-                Parameters:
-                -----------
-                alpha : float
-                    Spin parameter of the Kerr black hole. Must be in the open interval (-1, 1).
-                """
-        self.alpha = alpha
-
-    def __str__(self) -> str:
-        return f"KerrBlackHole(alpha={self.alpha})"
-
-    def r_plus(self) -> float:
-        """
-        Return the radius of the event horizon for the Kerr black hole with the given spin parameter.
-        """
-        return 1 + np.sqrt(1 - self.alpha ** 2)
-
-
