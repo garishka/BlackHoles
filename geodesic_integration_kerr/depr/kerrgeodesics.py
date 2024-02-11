@@ -3,8 +3,8 @@ import numpy as np
 from geodesic_integration_kerr.depr import metricKerr
 
 
-class KerrGeodesics:
-    def __init__(self,  position, momentum, metric_params=[0.99, 0], null=True):
+class KerrGeodesics(metricKerr):
+    def __init__(self, position, momentum, alpha: float, null=True):
         """
         Constructor
 
@@ -21,14 +21,14 @@ class KerrGeodesics:
             Default null=True, whether the geodesic is null.
             Currently useless, UwU
         """
-        self.m_params = metric_params
+        super().__init__(alpha)
         self.position = position
         self.momentum = momentum
         self.null = null
 
     def dgdtheta(self):
-        # Calculate and return the derivative of the geodesic components with respect to the polar angle (θ).
-        alpha = self.m_params[0]
+        # Calculate and return the derivative of the contravarian Kerr metric with respect to the polar angle (θ)
+        alpha = self.alpha
         r, th = self.position
         sigma = metricKerr.sigma_expr(r, th, alpha)
         A = metricKerr.A_expr(r, th, alpha)
@@ -36,17 +36,18 @@ class KerrGeodesics:
 
         dgdth = np.zeros(shape=(4, 4), dtype=float)
 
-        dgdth[0, 0] = 2 * r * alpha ** 2 * np.sin(2 * th) / sigma ** 2
-        dgdth[0, 3] = dgdth[3, 0] = - 4 * r * alpha * np.sin(2 * th) * (1 - (alpha * np.sin(th) ** 2) / sigma) / sigma
-        dgdth[1, 1] = - alpha ** 2 * np.sin(2 * th) / delta
-        dgdth[2, 2] = - alpha ** 2 * np.sin(2 * th)
-        dgdth[3, 3] = np.sin(2 * th) * (2 * A - (r **2 + alpha ** 2) ** 2 + A * np.sin(th) ** 2 / sigma) / sigma
+        dgdth[0, 0] = - alpha ** 2 * np.sin(2 * th) / sigma - A * alpha ** 2 * np.sin(2 * th) / (delta * sigma ** 2)
+        dgdth[0, 3] = dgdth[3, 0] = 2 * r * alpha * np.sin(2 * th) / (delta * sigma) ** 2
+        dgdth[1, 1] = alpha ** 2 * np.sin(2 * th) * delta / sigma ** 2
+        dgdth[2, 2] = alpha ** 2 * np.sin(2 * th) / sigma ** 2
+        dgdth[3, 3] = - alpha ** 2 * np.sin(2 * th) / (delta * sigma * np.sin(th) ** 2) + np.sin(2 * th) * (delta - (
+                      alpha * np.sin(th)) ** 2) * (sigma - (alpha * np.sin(th)) ** 2) / (delta * (sigma * np.sin(th)) ** 2)
 
         return dgdth
 
     def dgdr(self):
-        # Calculate and return the derivative of the geodesic components with respect to the radial coordinate (r).
-        alpha = self.m_params[0]
+        # Calculate and return the derivative of the contravariant Kerr metric with respect to the radial coordinate (r)
+        alpha = self.alpha
         r, th = self.position
         sigma = metricKerr.sigma_expr(r, th, alpha)
         A = metricKerr.A_expr(r, th, alpha)
@@ -56,11 +57,13 @@ class KerrGeodesics:
 
         dAdr = 4 * r * (r ** 2 + alpha ** 2) - 2 * (r - 1) * alpha ** 2 * np.sin(th) ** 2
 
-        dgdr[0, 0] = 2 * (1 - 2 * r ** 2 / sigma) / sigma
-        dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha * np.sin(th) ** 2 * (1 - 2 * r ** 2 / sigma) / sigma
-        dgdr[1, 1] = 2 * (r + (1 - r) * sigma / delta) / delta
-        dgdr[2, 2] = 2 * r
-        dgdr[3, 3] = np.sin(th) ** 2 * (dAdr - 2 * r * A / sigma) / sigma
+        dgdr[0, 0] = - dAdr / (sigma * delta) + 2 * A * (r * (sigma + delta) - sigma) / (sigma * delta) ** 2
+        dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha / (sigma * delta) + 4 * r * alpha * (r * (sigma + delta) - sigma) / (
+                     sigma * delta) ** 2
+        dgdr[1, 1] = 2 * (r - 1) / sigma - 2 * r * delta / sigma ** 2
+        dgdr[2, 2] = - 2 * r / sigma ** 2
+        dgdr[3, 3] = (2 * (r - 1) / (delta * sigma) - 2 * (delta - (alpha * np.sin(th)) ** 2) * (r * (sigma + delta) -
+                      sigma) / (delta * sigma) ** 2) / np.sin(th) ** 2
 
         return dgdr
 
@@ -68,7 +71,7 @@ class KerrGeodesics:
         """
         Calculates the Hamiltonian for the geodesic motion.
         """
-        alpha = self.m_params[0]
+        alpha = self.alpha
         p_t, p_r, p_th, p_phi = self.momentum
         g = metricKerr.contra_Kerr_metric(self.position, alpha)
 
@@ -78,7 +81,7 @@ class KerrGeodesics:
 
         return H
 
-    # TODO: да добавя начин за проверка на запазването на енергията и момента на импулсаl
+    # TODO: да добавя начин за проверка на запазването на енергията и момента на импулса
     def hamilton_eqs(self, l: float, qp: np.ndarray) -> np.ndarray:
         """
         Calculate and return the Hamiltonian equations for the geodesic motion.
@@ -99,8 +102,8 @@ class KerrGeodesics:
         """
         t, r, th, phi = qp[:4]
         E, p_r, p_th, L = qp[4:]
-        alpha = self.m_params[0]
-        g = metricKerr.Kerr_metric((r, th), alpha)
+        alpha = self.alpha
+        g = metricKerr.contra_Kerr_metric((r, th), alpha)
         dgdth = self.dgdtheta()
         dgdr = self.dgdr()
 
@@ -111,7 +114,7 @@ class KerrGeodesics:
         dzdl[2] = g[2, 2] * p_th
         dzdl[3] = g[0, 3] * E + g[3, 3] * L
 
-        dzdl[4] = 1e-15     # trying if a very small number ≠0 would be better for numerical computations
+        dzdl[4] = 1e-15  # trying if a very small number ≠0 would be better for numerical computations
         dzdl[5] = - 0.5 * (dgdr[0, 0] * E ** 2 + dgdr[0, 3] * E * L + dgdr[1, 1] * p_r ** 2 + dgdr[2, 2] * p_th ** 2
                            + dgdr[3, 3] * L ** 2)
         dzdl[6] = - 0.5 * (dgdth[0, 0] * E ** 2 + dgdth[0, 3] * E * L + dgdth[1, 1] * p_r ** 2 + dgdth[2, 2] * p_th ** 2
@@ -120,10 +123,8 @@ class KerrGeodesics:
 
         return dzdl
 
-
-#g = Kerr_metric([15, np.pi/2, 0], 0.99)
-#print(np.linalg.det(g))
-#analytic = g[0, 0] * g[1, 1] * g[2, 2] * g[3, 3] - g[0, 3] ** 2 * g[1, 1] * g[2, 2]
-#print(analytic)
+# g = Kerr_metric([15, np.pi/2, 0], 0.99)
+# print(np.linalg.det(g))
+# analytic = g[0, 0] * g[1, 1] * g[2, 2] * g[3, 3] - g[0, 3] ** 2 * g[1, 1] * g[2, 2]
+# print(analytic)
 # => дават еднакъв резултат
-
