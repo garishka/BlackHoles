@@ -3,7 +3,7 @@ import numpy as np
 from geodesic_integration_kerr.depr import metricKerr
 
 
-class KerrGeodesics(metricKerr):
+class KerrGeodesics(metricKerr.KerrBlackHole):
     def __init__(self, position, momentum, alpha: float, null=True):
         """
         Constructor
@@ -27,7 +27,7 @@ class KerrGeodesics(metricKerr):
         self.null = null
 
     def dgdtheta(self):
-        # Calculate and return the derivative of the contravarian Kerr metric with respect to the polar angle (θ)
+        # Calculate and return the derivative of the contravariant Kerr metric with respect to the polar angle (θ)
         alpha = self.alpha
         r, th = self.position
         sigma = metricKerr.sigma_expr(r, th, alpha)
