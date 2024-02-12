@@ -4,6 +4,7 @@ import inspect
 import warnings
 from dataclasses import dataclass
 
+
 ########################################## BUTCHER TABLEAU #############################################################
 
 a = np.asarray([[0, 0, 0, 0, 0, 0, 0],
@@ -21,8 +22,9 @@ b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 
 
 ################################### ACCURACY AND ERRORS ################################################################
 
-KDP_ACCURACY = 1e-4
+RK45_ACCURACY = 1e-4
 EPSILON = 1e-16
+NUM_ITER = 10 ** 5
 
 
 @dataclass
@@ -32,14 +34,14 @@ class StepErrors:
     sec_prev_err: float
 
 
-err = StepErrors(KDP_ACCURACY, KDP_ACCURACY, KDP_ACCURACY)  # това изглежда мега тъпо като решение
+err = StepErrors(RK45_ACCURACY, RK45_ACCURACY, RK45_ACCURACY)  # това изглежда мега тъпо като решение
 
 
 #################################### DORMAND-PRINCE, uwu ###############################################################
 
 # func(t, qp, *params)
 # init = (q0, p0)
-def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: float, num_iter: int, **params) -> tuple:
+def RK45(func: Callable, init: Union[np.ndarray, List], t_interval: Union[List, tuple], h_init: float, BH: bool, **params) -> tuple:
 
     if len(params) > (len(inspect.signature(func).parameters)-2):       # -2 за компенсиране на t, y
         warnings.warn("The number of parameters given exceeds the number of positional arguments. "
@@ -48,15 +50,22 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
         if len(params) < (len(inspect.signature(func).parameters)-2):
             raise TypeError("Check your parameter names. Something is wrong.")
 
-    t = np.zeros(shape=num_iter)
-    y = np.zeros(shape=(num_iter, 2*len(init)))
-    t[0] = t_init
+    rev = bool(t_interval[0] > t_interval[-1])
+
+    if rev:
+        h_init = - abs(h_init)
+    elif t_interval[0] == t_interval[-1]:
+        warnings.warn("Check your t intervals.")
+
+    t = np.zeros(shape=NUM_ITER)
+    y = np.zeros(shape=(NUM_ITER, 2*len(init)))
+    t[0] = t_interval[0]
     y[0] = np.tile(init, 2)
     h = h_init
 
     k = np.zeros(shape=(7, len(init)), dtype=float)
 
-    for j in range(1, num_iter):
+    for j in range(1, NUM_ITER):
         for i in range(7):
             k[i] = h * func(t[j-1] + h * c[i], y[j-1, :len(init)] + np.dot(a[i], k), *params.values())
 
@@ -71,16 +80,28 @@ def kdp45(func: Callable, init: Union[np.ndarray, List], t_init: float, h_init: 
         # p47, "Numerical Methods" Jeffrey R. Chasnov (lecture notes adapted for Coursera)
         # s = (1e-4 / dif) ** 0.2     # какво е това ϵ във формулата -> desired error tolerance
 
-        if dif < KDP_ACCURACY:
+        if dif < RK45_ACCURACY:
             t[j] = t[j-1] + h
-            h *= (KDP_ACCURACY / (err.cur_err + EPSILON)) ** (0.58 / 5)
-            h *= (KDP_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
-            h *= (KDP_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
+            h *= (RK45_ACCURACY / (err.cur_err + EPSILON)) ** (0.58 / 5)
+            h *= (RK45_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
+            h *= (RK45_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
+
+            # не ми харесва колко if-ове има и повтарящ се код
+            if BH and y[j, 1] < 40:     # radial component < 40
+                if (y[j, 5] < 0 and rev) or (y[j, 5] > 0 and not rev):      # p_r
+                    y = y.transpose()[:len(init)]
+                    y = y[:np.count_nonzero(y[0])]      # remove zero elements
+                    return False, t, y      # not fallen
+                elif y[j, 1] < 0:       # avoiding circular imports, uwu(?)
+                    y = y.transpose()[:len(init)]
+                    y = y[:np.count_nonzero(y[0])]
+                    return True, t, y
+
         else:
             t[j] = t[j-1]
             y[j, :] = y[j-1, :]
-            h *= 0.8 * (KDP_ACCURACY / (err.cur_err + 1e-10)) ** 0.25
+            h *= 0.8 * (RK45_ACCURACY / (err.cur_err + 1e-10)) ** 0.25
             j -= 1
 
-    y = y.transpose()
+    y = y.transpose()[:len(init)]
     return t, y
