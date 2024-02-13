@@ -78,10 +78,10 @@ def symplectic_integrator(H, qp0, metric_params, step_size: float, omega: float,
     results[0] = double_qp
 
     if ord == 2:
-        for i in range(1, num_steps):
+        for i in range(num_steps):
             results[i] = second_order(H, results[i-1], metric_params, step_size, omega)
     elif ord == 4:
-        for i in range(1, num_steps):
+        for i in range(num_steps):
             results[i] = forth_order(H, results[i-1], metric_params, step_size, omega)
 
     results_T = np.transpose(results)
