@@ -1,7 +1,10 @@
 from geodesic_integration_kerr.kdp_integrator import kdp45
+
 from matplotlib import pyplot as plt
 import numpy as np
 import inspect
+import time
+import numba
 
 def exponential_decay(t, y, d):
     return - d * y
@@ -27,15 +30,20 @@ print(len(inspect.signature(periodic_uwu).parameters))
 print(inspect.signature(kdp45))
 # -> (func: Callable, init: Union[numpy.ndarray, List], t_init: float, h_init: float, num_iter: int, **params)
 
+start = time.time()
 t_per, y_per = kdp45(func=periodic_uwu,
                      init=[.8],
                      t_init=0.,
                      h_init=0.01,
                      num_iter=200,
                      params=5)
+end = time.time()
 
 t = np.linspace(t_per[0], t_per[-1], 2000)
 anl_per = - np.cos(5 * t) + 1.8
+
+print(end-start)
+# normal: 0.011017084121704102s
 
 
 def polynomial(t, y, d, e):
