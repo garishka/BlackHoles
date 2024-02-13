@@ -65,7 +65,7 @@ def A_expr(r, theta, alpha):
     return (r ** 2 + alpha ** 2) ** 2 - delta_expr(r, alpha) * (alpha * np.sin(theta)) ** 2
 
 
-def Kerr_metric(x_vec, *params):
+def Kerr_metric(r, th, alpha):
     """
     Calculate the covariant form of the Kerr metric in Boyer-Lindquist coordinates.
 
@@ -81,10 +81,9 @@ def Kerr_metric(x_vec, *params):
     np.ndarray
         A (4, 4) array representing the covariant metric components.
     """
-    r, th = x_vec
-    alpha = params[0]
 
     sigma = sigma_expr(r, th, alpha)
+
     delta = delta_expr(r, alpha)
     A = A_expr(r, th, alpha)
 
@@ -99,7 +98,7 @@ def Kerr_metric(x_vec, *params):
     return g
 
 
-def contra_Kerr_metric(x_vec, *params):
+def contra_Kerr_metric(r, th, alpha):
     """
     Calculate the contravariant form of the Kerr metric in Boyer-Lindquist coordinates.
 
@@ -130,4 +129,4 @@ def contra_Kerr_metric(x_vec, *params):
     #g[1, 1] = delta / sigma
     #g[2, 2] = 1 / sigma
 
-    return np.linalg.inv(Kerr_metric(x_vec, *params))
+    return np.linalg.inv(Kerr_metric(r, th, alpha))

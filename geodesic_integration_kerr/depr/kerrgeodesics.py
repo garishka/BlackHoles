@@ -3,8 +3,46 @@ import numpy as np
 from geodesic_integration_kerr.depr import metricKerr
 
 
-class KerrGeodesics(metricKerr.KerrBlackHole):
-    def __init__(self, position, momentum, alpha: float, null=True):
+class KerrBlackHole:
+    """
+    Represents a Kerr black hole with a specified spin parameter.
+
+    Parameters:
+    -----------
+    alpha : float
+        Spin parameter of the Kerr black hole. Must be in the open interval (-1, 1).
+
+    Methods:
+    -----------
+    __str__():
+        Return a string representation of the KerrBlackHole instance.
+
+    r_plus() -> float:
+        Return the radius of the event horizon for the Kerr black hole with the given spin parameter.
+    """
+    def __init__(self, alpha=0.99):
+        """
+                Initialize a KerrBlackHole instance with the specified spin parameter.
+
+                Parameters:
+                -----------
+                alpha : float
+                    Spin parameter of the Kerr black hole. Must be in the open interval (-1, 1).
+                """
+        self.alpha = alpha
+
+    def __str__(self) -> str:
+        return f"KerrBlackHole(alpha={self.alpha})"
+
+    def r_plus(self) -> float:
+        """
+        Return the radius of the event horizon for the Kerr black hole with the given spin parameter.
+        """
+        return 1 + np.sqrt(1 - self.alpha ** 2)
+
+
+class KerrGeodesics(KerrBlackHole):
+    def __init__(self, alpha=0.99, null=True):
         """
         Constructor
 
@@ -22,14 +60,11 @@ class KerrGeodesics(metricKerr.KerrBlackHole):
             Currently useless, UwU
         """
         super().__init__(alpha)
-        self.position = position
-        self.momentum = momentum
         self.null = null
 
-    def dgdtheta(self):
+    def dgdtheta(self, r, th):
         # Calculate and return the derivative of the contravariant Kerr metric with respect to the polar angle (θ)
         alpha = self.alpha
-        r, th = self.position
         sigma = metricKerr.sigma_expr(r, th, alpha)
         A = metricKerr.A_expr(r, th, alpha)
         delta = metricKerr.delta_expr(r, alpha)
@@ -45,10 +80,9 @@ class KerrGeodesics(metricKerr.KerrBlackHole):
 
         return dgdth
 
-    def dgdr(self):
+    def dgdr(self, r, th):
         # Calculate and return the derivative of the contravariant Kerr metric with respect to the radial coordinate (r)
         alpha = self.alpha
-        r, th = self.position
         sigma = metricKerr.sigma_expr(r, th, alpha)
         A = metricKerr.A_expr(r, th, alpha)
         delta = metricKerr.delta_expr(r, alpha)
@@ -66,20 +100,6 @@ class KerrGeodesics(metricKerr.KerrBlackHole):
                       sigma) / (delta * sigma) ** 2) / np.sin(th) ** 2
 
         return dgdr
-
-    def hamiltonian(self):
-        """
-        Calculates the Hamiltonian for the geodesic motion.
-        """
-        alpha = self.alpha
-        p_t, p_r, p_th, p_phi = self.momentum
-        g = metricKerr.contra_Kerr_metric(self.position, alpha)
-
-        # за фотони
-        H = 0.5 * (g[0, 0] * p_t ** 2 + g[1, 1] * p_r ** 2 + g[2, 2] * p_th ** 2
-                   + g[0, 3] * p_phi * p_t + g[3, 3] * p_phi ** 2)
-
-        return H
 
     # TODO: да добавя начин за проверка на запазването на енергията и момента на импулса
     def hamilton_eqs(self, l: float, qp: np.ndarray) -> np.ndarray:
@@ -103,9 +123,9 @@ class KerrGeodesics(metricKerr.KerrBlackHole):
         t, r, th, phi = qp[:4]
         E, p_r, p_th, L = qp[4:]
         alpha = self.alpha
-        g = metricKerr.contra_Kerr_metric((r, th), alpha)
-        dgdth = self.dgdtheta()
-        dgdr = self.dgdr()
+        g = metricKerr.contra_Kerr_metric(r, th, alpha)
+        dgdth = self.dgdtheta(r, th)
+        dgdr = self.dgdr(r, th)
 
         dzdl = np.zeros(shape=8, dtype=float)
 

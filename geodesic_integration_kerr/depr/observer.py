@@ -69,7 +69,7 @@ class Observer:
         """
         Return the perimetral radius based on the Kerr metric.
         """
-        return np.sqrt(Kerr_metric(self.position, self.alpha)[3, 3])
+        return np.sqrt(Kerr_metric(*self.position, self.alpha)[3, 3])
 
     def impact_params(self, a1: Union[float, np.ndarray], a2: Union[float, np.ndarray]) -> np.ndarray:
         """
@@ -99,11 +99,11 @@ class Observer:
         return np.array([x, y])
 
     def gamma_g(self) -> float:
-        metric = Kerr_metric(self.position, self.alpha)
+        metric = Kerr_metric(*self.position, self.alpha)
         return -metric[0, 3] / np.sqrt(metric[3, 3] * (metric[0, 3] ** 2 - metric[0, 0] * metric[3, 3]))
 
     def zeta(self) -> float:
-        metric = Kerr_metric(self.position, self.alpha)
+        metric = Kerr_metric(*self.position, self.alpha)
         return np.sqrt(metric[3, 3] / (metric[0, 3] ** 2 - metric[0, 0] * metric[3, 3]))
 
     def p_init(self, a1: float, a2: float) -> list[float]:
@@ -125,7 +125,7 @@ class Observer:
         ----------
         p_init[0] = E = const, p_init[3] = L = const
         """
-        metric = Kerr_metric(self.position, self.alpha)
+        metric = Kerr_metric(*self.position, self.alpha)
 
         p_th = np.sqrt(metric[2, 2]) * np.sin(a2)
         p_r = np.sqrt(metric[1, 1]) * np.cos(a1) * np.cos(a2)
