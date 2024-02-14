@@ -62,14 +62,14 @@ if __name__ == "__main__":
     iterable = list(itertools.product(range(RES), range(RES)))
     i, j = zip(*iterable)
 
-    results = np.empty(shape=(RES, RES))
+    results = np.empty(shape=(RES, RES, 8))
 
     start = time.time()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         # Loop through each (δ, γ) coordinate on the observer's plane
         for fallen, end_vals in executor.map(solve_BH_shadow, i, j):
-            results[i, j] = end_vals
+            results[i, j, :] = end_vals
 
             if fallen:
                 # The light ray falls into the black hole; set the pixel to black
