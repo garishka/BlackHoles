@@ -137,8 +137,8 @@ def solve_ivp_(i, j):
         # Δr за данните?
         if results[1, k] <= r_plus:
             # The light ray falls into the black hole; return the values of the pixel that has to be set black
-            return True, (i, j)
-    return False, (i, j)
+            return True
+    return False
 
 
 # TODO: да добавя map-ване към картинка с шарка за небесната сфера
@@ -155,14 +155,10 @@ if __name__ == "__main__":
     start = time.time()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
-        for result in executor.map(solve_ivp_, k, l):
-            fallen, coords = result
+        for fallen in executor.map(solve_ivp_, k, l):
 
-            d, b = coords
             if fallen:
-                pixels[b, d] = (0, 0, 0)
-            #else:
-            #    pixels[b, res - 1 - d] = (255, 255, 255)
+                pixels[k, l] = (0, 0, 0)
 
     end = time.time()
     elapsed_time_sec = end - start
