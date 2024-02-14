@@ -7,7 +7,7 @@ celestial sphere.
 
 Parameters:
 -----------
-- res (int): Image resolution.
+- RES (int): Image resolution.
 - r0 (float): Initial radial coordinate.
 - th0 (float): Initial polar coordinate.
 - a0 (float): Spin parameter of the black hole.
