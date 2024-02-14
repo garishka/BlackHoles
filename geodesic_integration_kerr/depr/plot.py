@@ -7,7 +7,7 @@ import logging
 
 import kerrgeodesics
 # from geodesic_integration_kerr.kdp_integrator import kdp45
-from geodesic_integration_kerr.dormand_prince import RK45
+from geodesic_integration_kerr.dormand_prince import RK45_mod
 from observer import Observer
 
 # Image resolution
@@ -41,13 +41,14 @@ def solve_BH_shadow(delta_i, gamma_j):
     ivp[1:3] = init_q
     ivp[4:] = init_p
 
-    fallen, tau, z = RK45(func=geo.hamilton_eqs,
-                          init=ivp,
-                          t_interval=(-10_000, 1e-10),
-                          h_init=.9,
-                          r_plus=r_plus)
+    fallen, end_values = RK45_mod(func=geo.hamilton_eqs,
+                                  init=ivp,
+                                  t_interval=(-10_000, 1e-10),
+                                  h_init=.9,
+                                  r_plus=r_plus,
+                                  trajectory=False)
 
-    return fallen
+    return fallen, end_values
 
 
 if __name__ == "__main__":
@@ -60,12 +61,15 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     iterable = list(itertools.product(range(RES), range(RES)))
     i, j = zip(*iterable)
-    
+
+    results = np.empty(shape=(RES, RES))
+
     start = time.time()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         # Loop through each (δ, γ) coordinate on the observer's plane
-        for fallen in executor.map(solve_BH_shadow, i, j):
+        for fallen, end_vals in executor.map(solve_BH_shadow, i, j):
+            results[i, j] = end_vals
 
             if fallen:
                 # The light ray falls into the black hole; set the pixel to black
@@ -76,5 +80,9 @@ if __name__ == "__main__":
     hours, remainder = divmod(elapsed_time_sec, 3600)
     minutes, seconds = divmod(remainder, 60)
     print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
+
+    np.save("BH_shadow_results.npy", results)
+    # To load array
+    # data = np.load('data.npy')
 
     image.save("test_hole.png")
