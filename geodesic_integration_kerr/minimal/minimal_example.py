@@ -164,7 +164,6 @@ if __name__ == "__main__":
     elapsed_time_sec = end - start
     hours, remainder = divmod(elapsed_time_sec, 3600)
     minutes, seconds = divmod(remainder, 60)
-    print(start)
     print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
 
     image = image.transpose(Image.FLIP_LEFT_RIGHT)
