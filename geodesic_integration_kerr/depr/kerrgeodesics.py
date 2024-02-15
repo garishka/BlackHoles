@@ -71,12 +71,12 @@ class KerrGeodesics(KerrBlackHole):
 
         dgdth = np.zeros(shape=(4, 4), dtype=float)
 
-        dgdth[0, 0] = - alpha ** 2 * np.sin(2 * th) / sigma - A * alpha ** 2 * np.sin(2 * th) / (delta * sigma ** 2)
-        dgdth[0, 3] = dgdth[3, 0] = 2 * r * alpha * np.sin(2 * th) / (delta * sigma) ** 2
+        dgdth[0, 0] = (delta * sigma - A) * np.sin(2 * th) * alpha ** 2 / (delta * sigma ** 2)
+        dgdth[0, 3] = dgdth[3, 0] = - 2 * r * np.sin(2 * th) * alpha ** 3 / (delta * sigma ** 2)
         dgdth[1, 1] = alpha ** 2 * np.sin(2 * th) * delta / sigma ** 2
         dgdth[2, 2] = alpha ** 2 * np.sin(2 * th) / sigma ** 2
-        dgdth[3, 3] = - alpha ** 2 * np.sin(2 * th) / (delta * sigma * np.sin(th) ** 2) + np.sin(2 * th) * (delta - (
-                      alpha * np.sin(th)) ** 2) * (sigma - (alpha * np.sin(th)) ** 2) / (delta * (sigma * np.sin(th)) ** 2)
+        dgdth[3, 3] = - np.sin(2 * th) * (alpha ** 2 + (delta - (alpha * np.sin(th)) ** 2 * (sigma
+                      - (alpha * np.sin(th)) ** 2) / (sigma * np.sin(th)))) / (delta * sigma * np.sin(th) ** 2)
 
         return dgdth
 
@@ -94,7 +94,7 @@ class KerrGeodesics(KerrBlackHole):
         dgdr[0, 0] = - dAdr / (sigma * delta) + 2 * A * (r * (sigma + delta) - sigma) / (sigma * delta) ** 2
         dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha / (sigma * delta) + 4 * r * alpha * (r * (sigma + delta) - sigma) / (
                      sigma * delta) ** 2
-        dgdr[1, 1] = 2 * (r - 1) / sigma - 2 * r * delta / sigma ** 2
+        dgdr[1, 1] = 2 * r * (sigma - delta) / sigma ** 2 - 2 / sigma
         dgdr[2, 2] = - 2 * r / sigma ** 2
         dgdr[3, 3] = (2 * (r - 1) / (delta * sigma) - 2 * (delta - (alpha * np.sin(th)) ** 2) * (r * (sigma + delta) -
                       sigma) / (delta * sigma) ** 2) / np.sin(th) ** 2
@@ -135,9 +135,9 @@ class KerrGeodesics(KerrBlackHole):
         dzdl[3] = g[0, 3] * E + g[3, 3] * L
 
         dzdl[4] = 1e-15  # trying if a very small number ≠0 would be better for numerical computations
-        dzdl[5] = - 0.5 * (dgdr[0, 0] * E ** 2 + dgdr[0, 3] * E * L + dgdr[1, 1] * p_r ** 2 + dgdr[2, 2] * p_th ** 2
+        dzdl[5] = - 0.5 * (dgdr[0, 0] * E ** 2 + 2 * dgdr[0, 3] * E * L + dgdr[1, 1] * p_r ** 2 + dgdr[2, 2] * p_th ** 2
                            + dgdr[3, 3] * L ** 2)
-        dzdl[6] = - 0.5 * (dgdth[0, 0] * E ** 2 + dgdth[0, 3] * E * L + dgdth[1, 1] * p_r ** 2 + dgdth[2, 2] * p_th ** 2
+        dzdl[6] = - 0.5 * (dgdth[0, 0] * E ** 2 + 2 * dgdth[0, 3] * E * L + dgdth[1, 1] * p_r ** 2 + dgdth[2, 2] * p_th ** 2
                            + dgdth[3, 3] * L ** 2)
         dzdl[7] = 1e-15
 

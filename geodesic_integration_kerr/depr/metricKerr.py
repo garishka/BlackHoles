@@ -114,19 +114,17 @@ def contra_Kerr_metric(r, th, alpha):
     np.ndarray
         A (4, 4) array representing the contravariant metric components in Boyer-Lindquist coordinates.
     """
-    #r, th = x_vec
-    #alpha = params[0]
 
-    #sigma = sigma_expr(r, th, alpha)
-    #delta = delta_expr(r, alpha)
-    #A = A_expr(r, th, alpha)
+    sigma = sigma_expr(r, th, alpha)
+    delta = delta_expr(r, alpha)
+    A = A_expr(r, th, alpha)
 
-    #g = np.zeros(shape=(4, 4), dtype=float)
+    g = np.zeros(shape=(4, 4), dtype=float)
 
-    #g[0, 0] = - A / (delta * sigma)
-    #g[0, 3] = g[3, 0] = - 2 * r * alpha / (delta * sigma)
-    #g[3, 3] = (delta - (alpha * np.sin(th) ** 2)) / (delta * sigma * np.sin(th) ** 2)
-    #g[1, 1] = delta / sigma
-    #g[2, 2] = 1 / sigma
+    g[0, 0] = - A / (delta * sigma)
+    g[0, 3] = g[3, 0] = - 2 * r * alpha / (delta * sigma)
+    g[3, 3] = (delta - (alpha * np.sin(th)) ** 2) / (delta * sigma * np.sin(th) ** 2)
+    g[1, 1] = delta / sigma
+    g[2, 2] = 1 / sigma
 
-    return np.linalg.inv(Kerr_metric(r, th, alpha))
+    return g
