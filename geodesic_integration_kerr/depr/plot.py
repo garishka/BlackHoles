@@ -48,7 +48,7 @@ def solve_BH_shadow(delta_i, gamma_j):
                                   r_plus=r_plus,
                                   trajectory=False)
 
-    return fallen, end_values
+    return fallen, delta_i, gamma_j
 
 
 if __name__ == "__main__":
@@ -68,12 +68,11 @@ if __name__ == "__main__":
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         # Loop through each (δ, γ) coordinate on the observer's plane
-        for fallen, end_vals in executor.map(solve_BH_shadow, i, j):
-            results[i, j, :] = end_vals
+        for fallen, delta_i, gamma_j in executor.map(solve_BH_shadow, i, j):
 
             if fallen:
                 # The light ray falls into the black hole; set the pixel to black
-                pixels[i, j] = (0, 0, 0)
+                pixels[delta_i, gamma_j] = (0, 0, 0)
 
     end = time.time()
     elapsed_time_sec = end - start

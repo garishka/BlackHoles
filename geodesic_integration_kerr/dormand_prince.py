@@ -22,10 +22,10 @@ b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 
 
 ################################### ACCURACY AND ERRORS ################################################################
 
-RK45_ACCURACY = 1e-8        # Desired accuracy for the RK45 method
+RK45_ACCURACY = 1e-9        # Desired accuracy for the RK45 method
 EPSILON = 1e-16     # A small value to prevent division by zero errors
-NUM_ITER = 10 ** 3      # Maximum number of iterations allowed before termination
-DELTA = 1e-3        # Delta value used for evaluating if the photon trajectory originates from the black hole
+NUM_ITER = int(1e4)      # Maximum number of iterations allowed before termination
+DELTA = 1e-1        # Delta value used for evaluating if the photon trajectory originates from the black hole
 
 
 @dataclass
@@ -94,7 +94,14 @@ def RK45_mod(func: Callable, init: Union[np.ndarray, List], t_interval: Union[Li
             h *= (RK45_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
             h *= (RK45_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
 
-            if y[j, 1] < r_plus + DELTA:
+            if y[j, 1] > 501:
+                y = y.transpose()[:len(init)]
+                y = y[:, :np.count_nonzero(y[1])]
+                if trajectory:
+                    return False, t, y
+                else:
+                    return False, y[:, -1]
+            elif y[j, 1] < r_plus + DELTA:
                 y = y.transpose()[:len(init)]
                 y = y[:, :np.count_nonzero(y[1])]
                 if trajectory:
