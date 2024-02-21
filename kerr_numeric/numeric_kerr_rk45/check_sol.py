@@ -6,6 +6,8 @@ import matplotlib as mpl
 
 from plot import ll_corner
 
+a = 0.99
+
 # за графиките
 preamble = [r'\usepackage[utf8]{inputenc}',
     r'\usepackage[bulgarian]{babel}',
@@ -53,10 +55,10 @@ def shadow_rim(alpha, theta=np.pi/2, M=1):
     return x, y
 
 
-bh_analytic = shadow_rim(alpha=0.99, theta=np.pi/2, M=1)
+bh_analytic = shadow_rim(alpha=a, theta=np.pi/2, M=1)
 
 
-bh_numerical = Image.open("/kerr_numeric/numeric_kerr_rk45/test_bh_alpha0p99.png")
+bh_numerical = Image.open("/home/gerganadaskalova/PycharmProjects/pythonProject/pythonProject/kerr_numeric/numeric_kerr_rk45/test_bh_alpha0p99.png")
 bh_numerical = bh_numerical.transpose(method=Image.FLIP_LEFT_RIGHT)
 
 fig, ax = plt.subplots(figsize=(4, 4))
@@ -67,6 +69,6 @@ ax.set_xlabel(r'$x$, [M]')
 ax.set_ylabel(r'$y$, [M]')
 ax.set_aspect('equal', adjustable='datalim')
 ax.legend(facecolor="white", edgecolor="white", loc='upper right')
-ax.set_title(r"$\alpha=0.99$")
+ax.set_title(r"$\alpha=$"+f"{a}")
 plt.tight_layout()
 plt.savefig('check_solution_alpha0p99.pdf')

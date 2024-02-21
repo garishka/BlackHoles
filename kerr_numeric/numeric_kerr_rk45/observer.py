@@ -2,10 +2,11 @@ import numpy as np
 from typing import Union
 
 from metricKerr import Kerr_metric
+from kerrgeodesics import KerrBlackHole
 
 
 # не ми харесва как е дефиниран тоя клас
-class Observer:
+class Observer(KerrBlackHole):
     """
     Represents an observer in the vicinity of a Kerr black hole.
 
@@ -54,10 +55,9 @@ class Observer:
             Spin parameter of the black hole. Defaults to 0.99.
         """
 
-        #if position is []:
-        #    position =
+        super().__init__(alpha)
         self.position = position
-        self.alpha = alpha
+
 
     def coord(self) -> np.ndarray:
         """
