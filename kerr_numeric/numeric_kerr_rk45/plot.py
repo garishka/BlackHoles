@@ -24,29 +24,17 @@ r_plus = black_hole.r_plus()
 obs = Observer()
 init_q = obs.coord()
 
-# defining the values of the four corners of the image
-# because of the symmetry of the interval, 2 points are enough (or even 1)
-# those are the coordinates of the non-flipped image
-ll_corner = obs.impact_params(gamma[0], delta[0])       # [[ 7.06859738] [-7.06859738]]
-lr_corner = obs.impact_params(gamma[0], delta[-1])
-# ul_corner = np.array([ll_corner[0], -ll_corner[1]])
-# ur_corner = np.array([lr_corner[0], -lr_corner[-1]])
-avg_x = (ll_corner[0] + lr_corner[0]) / 2       # [-1570.79941818] center around zero
-ll_corner[0] -= avg_x
-lr_corner[0] -= avg_x
-print(ll_corner)
-
-
-
-# Load an image used for the celestial sphere background
-# background = Image.open("../background/patterned_circles.png")
-# px_bg = background.load()
+# Due to the symmetry of the interval, defining just one point adequately characterizes both the x and y impact parameter intervals.
+# Note that 'll_corner' refers to the lower left corner in the angle space.
+# However, in the impact parameter space, this point transforms to the lower right corner.
+# Utilizing 'll_corner[-1]' is preferable here as 'll_corner[0]' involves an offset and is less convenient to work with.
+ll_corner = obs.impact_params(gamma[0], delta[0])
 
 
 def solve_BH_shadow(delta_i, gamma_j):
+    # Solve the geodesic equations for the current (δ, γ) ≡ (β, α) ≡ (-x/r, y/r) with given initial conditions
     logging.info(f"Processing pixel ({delta_i}, {gamma_j})")
 
-    # Solve the geodesic equations for the current (δ, γ) ≡ (β, α) ≡ (-x/r, y/r) with given initial conditions
     init_p = obs.p_init(delta[delta_i], gamma[gamma_j])
     geo = kerrgeodesics.KerrGeodesics()
 
