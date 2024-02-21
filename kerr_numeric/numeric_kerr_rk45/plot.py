@@ -10,18 +10,18 @@ from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 500
+RES = 100
 
 # Generate a grid of angle values (δ, γ) ≡ (β, α) for the observer's viewpoint
 delta = np.linspace(0.9955 * np.pi, 1.0045 * np.pi, RES)
 gamma = np.linspace(-0.0045 * np.pi, 0.0045 * np.pi, RES)
 
 # Define a Kerr black hole with spin parameter α = 0.99
-black_hole = kerrgeodesics.KerrBlackHole()
+black_hole = kerrgeodesics.KerrBlackHole(alpha=0.01)
 r_plus = black_hole.r_plus()
 
 # Set the observer's position to (r, θ, ϕ) = (500, π, 0), a.k.a default position
-obs = Observer()
+obs = Observer(alpha=0.01)
 init_q = obs.coord()
 
 # Due to the symmetry of the interval, defining just one point adequately characterizes both the x and y impact parameter intervals.
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     # To load array
     # data = np.load('data.npy')
 
-    image.save("test_bh_alpha0p99.png")
+    image.save("test_bh_alpha0p01.png")
