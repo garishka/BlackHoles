@@ -1,4 +1,4 @@
-from geodesic_integration_kerr.integrator import symplectic_integrator
+from math_tools.symplectic import symplectic_integrator
 from matplotlib import pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec

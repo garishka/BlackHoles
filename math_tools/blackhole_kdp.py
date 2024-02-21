@@ -22,10 +22,10 @@ b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 
 
 ################################### ACCURACY AND ERRORS ################################################################
 
-RK45_ACCURACY = 1e-9        # Desired accuracy for the RK45 method
+RK45_ACCURACY = 1e-8        # Desired accuracy for the RK45 method
 EPSILON = 1e-16     # A small value to prevent division by zero errors
-NUM_ITER = int(1e4)      # Maximum number of iterations allowed before termination
-DELTA = 1e-1        # Delta value used for evaluating if the photon trajectory originates from the black hole
+NUM_ITER = int(1e3)      # Maximum number of iterations allowed before termination
+DELTA = 1e-2        # Delta value used for evaluating if the photon trajectory originates from the black hole
 
 
 @dataclass

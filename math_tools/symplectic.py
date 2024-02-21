@@ -1,5 +1,5 @@
 import numpy as np
-from geodesic_integration_kerr import dual
+from math_tools import dual
 
 
 # Molei Tao, doi: 10.1103/PhysRevE.94.043303
@@ -12,7 +12,7 @@ def _flow_A(H, double_qp, metric_params, step):
 
     for i in range(int(0.25*dim)):
         double_qp[int(0.25*dim)+i] -= step * dual.partial_deriv(H, qy, i, *metric_params)
-        double_qp[int(0.5*dim)+i] += step * dual.partial_deriv(H, qy, i+int(0.25*dim), *metric_params)
+        double_qp[int(0.5*dim)+i] += step * dual.partial_deriv(H, qy, i + int(0.25 * dim), *metric_params)
 
     return double_qp
 
@@ -25,7 +25,7 @@ def _flow_B(H, double_qp, metric_params, step):
     xp = np.concatenate((double_copy[int(0.5*dim):int(0.75*dim)], double_copy[int(0.25*dim):int(0.5*dim)]))
 
     for i in range(int(0.25*dim)):
-        double_qp[i] += step * dual.partial_deriv(H, xp, i+int(0.25*dim), *metric_params)
+        double_qp[i] += step * dual.partial_deriv(H, xp, i + int(0.25 * dim), *metric_params)
         double_qp[int(0.75*dim)+i] -= step * dual.partial_deriv(H, xp, i, *metric_params)
 
     return double_qp

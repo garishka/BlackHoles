@@ -6,12 +6,11 @@ import concurrent.futures
 import logging
 
 import kerrgeodesics
-# from geodesic_integration_kerr.kdp_integrator import kdp45
-from geodesic_integration_kerr.dormand_prince import RK45_mod
+from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 50
+RES = 500
 
 # Generate a grid of angle values (δ, γ) ≡ (β, α) for the observer's viewpoint
 delta = np.linspace(0.9955 * np.pi, 1.0045 * np.pi, RES)
@@ -25,9 +24,23 @@ r_plus = black_hole.r_plus()
 obs = Observer()
 init_q = obs.coord()
 
+# defining the values of the four corners of the image
+# because of the symmetry of the interval, 2 points are enough (or even 1)
+# those are the coordinates of the non-flipped image
+ll_corner = obs.impact_params(gamma[0], delta[0])       # [[ 7.06859738] [-7.06859738]]
+lr_corner = obs.impact_params(gamma[0], delta[-1])
+# ul_corner = np.array([ll_corner[0], -ll_corner[1]])
+# ur_corner = np.array([lr_corner[0], -lr_corner[-1]])
+avg_x = (ll_corner[0] + lr_corner[0]) / 2       # [-1570.79941818] center around zero
+ll_corner[0] -= avg_x
+lr_corner[0] -= avg_x
+print(ll_corner)
+
+
+
 # Load an image used for the celestial sphere background
-background = Image.open("../background/patterned_circles.png")
-px_bg = background.load()
+# background = Image.open("../background/patterned_circles.png")
+# px_bg = background.load()
 
 
 def solve_BH_shadow(delta_i, gamma_j):
@@ -84,4 +97,4 @@ if __name__ == "__main__":
     # To load array
     # data = np.load('data.npy')
 
-    image.save("test_hole.png")
+    image.save("test_bh_alpha0p99.png")

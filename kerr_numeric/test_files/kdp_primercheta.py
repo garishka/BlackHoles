@@ -1,10 +1,10 @@
-from geodesic_integration_kerr.kdp_integrator import kdp45
+from math_tools.kdp_integrator import kdp45
 
 from matplotlib import pyplot as plt
 import numpy as np
 import inspect
 import time
-import numba
+
 
 def exponential_decay(t, y, d):
     return - d * y

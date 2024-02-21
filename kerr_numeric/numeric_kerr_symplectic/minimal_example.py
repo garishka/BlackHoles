@@ -48,7 +48,7 @@ from PIL import Image, ImageDraw
 import time
 import concurrent.futures
 
-from geodesic_integration_kerr.integrator import symplectic_integrator
+from math_tools.symplectic import symplectic_integrator
 
 res = 81
 r0 = 60.

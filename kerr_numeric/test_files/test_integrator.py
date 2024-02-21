@@ -1,5 +1,5 @@
 import unittest
-from geodesic_integration_kerr import integrator
+from math_tools import symplectic
 import numpy as np
 from matplotlib import pyplot as plt
 

@@ -56,7 +56,7 @@ def shadow_rim_big_a(M=4):
     return x, y_plus
 
 
-def shadow_rim(alpha, theta=np.pi/2, M=4):
+def shadow_rim(alpha, theta=np.pi/2, M=1):
     a = alpha * M
 
     # определяне на границите на изменение на r от Q>=0
@@ -78,9 +78,9 @@ def shadow_rim(alpha, theta=np.pi/2, M=4):
     return x, y
 
 
-fig = plt.figure(figsize=(13, 4))
-gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 1])
-fig.suptitle(r'Kerr Black Hole Shadow Rim for $M=1$')
+#fig = plt.figure(figsize=(13, 4))
+#gs = gridspec.GridSpec(1, 3, width_ratios=[1, 1, 1])
+#fig.suptitle(r'Kerr Black Hole Shadow Rim for $M=1$')
 
 # за ектремалната черна дупка
 #x, y_plus = shadow_rim_big_a()
@@ -94,19 +94,19 @@ fig.suptitle(r'Kerr Black Hole Shadow Rim for $M=1$')
 
 th = [0.001, np.pi/4, np.pi/2 ]
 th_label = [r'$0.001$ rad',  r'$\pi/4$', r'$\pi/2$']
-for i in range(3):
-    for alpha in rot_params:
-        x, y = shadow_rim(alpha, theta=th[i], M=1)
-        ax = plt.subplot(gs[i])
-        ax.plot(x, y, label=f'a = {alpha}', color=colors[rot_params.index(alpha)])
-        ax.plot(x, -y, color=colors[rot_params.index(alpha)])
+# for i in range(3):
+#     for alpha in rot_params:
+#         x, y = shadow_rim(alpha, theta=th[i], M=1)
+#         ax = plt.subplot(gs[i])
+#         ax.plot(x, y, label=f'a = {alpha}', color=colors[rot_params.index(alpha)])
+#         ax.plot(x, -y, color=colors[rot_params.index(alpha)])
 
-    ax.set_xlabel(r'$x$, [M]')
-    ax.set_ylabel(r'$y$, [M]')
-    ax.set_aspect('equal', adjustable='datalim')
-    ax.legend(facecolor="white", edgecolor="white", loc='upper right', fontsize='8')
-    ax.set_title(f'$\\theta_0=$'+th_label[i])
-    ax.grid()
+#     ax.set_xlabel(r'$x$, [M]')
+#     ax.set_ylabel(r'$y$, [M]')
+#     ax.set_aspect('equal', adjustable='datalim')
+#     ax.legend(facecolor="white", edgecolor="white", loc='upper right', fontsize='8')
+#     ax.set_title(f'$\\theta_0=$'+th_label[i])
+#     ax.grid()
 
-plt.tight_layout()
-plt.savefig('kerr_shadowM.pdf')
+# plt.tight_layout()
+# plt.savefig('kerr_shadowM.pdf')

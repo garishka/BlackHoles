@@ -1,6 +1,6 @@
 # c = G = M = 1
 import numpy as np
-from geodesic_integration_kerr.depr import metricKerr
+from kerr_numeric.numeric_kerr_rk45 import metricKerr
 
 
 class KerrBlackHole:
@@ -69,14 +69,27 @@ class KerrGeodesics(KerrBlackHole):
         A = metricKerr.A_expr(r, th, alpha)
         delta = metricKerr.delta_expr(r, alpha)
 
+        sin = np.sin(th)
+        cos = np.cos(th)
+        # sin2 = np.sin(2 * th)
+
         dgdth = np.zeros(shape=(4, 4), dtype=float)
 
-        dgdth[0, 0] = (delta * sigma - A) * np.sin(2 * th) * alpha ** 2 / (delta * sigma ** 2)
-        dgdth[0, 3] = dgdth[3, 0] = - 2 * r * np.sin(2 * th) * alpha ** 3 / (delta * sigma ** 2)
-        dgdth[1, 1] = alpha ** 2 * np.sin(2 * th) * delta / sigma ** 2
-        dgdth[2, 2] = alpha ** 2 * np.sin(2 * th) / sigma ** 2
-        dgdth[3, 3] = - np.sin(2 * th) * (alpha ** 2 + (delta - (alpha * np.sin(th)) ** 2 * (sigma
-                      - (alpha * np.sin(th)) ** 2) / (sigma * np.sin(th)))) / (delta * sigma * np.sin(th) ** 2)
+        # dgdth[0, 0] = 2 * r * alpha ** 2 * sin2 * ((alpha * sin) ** 2 - delta * sigma)
+        # dgdth[0, 3] = dgdth[3, 0] = - 2 * r * sin2 * alpha ** 3 / (delta * sigma ** 2)
+        # dgdth[1, 1] = alpha ** 2 * sin2 * delta / sigma ** 2
+        # dgdth[2, 2] = alpha ** 2 * sin2 / sigma ** 2
+        # dgdth[3, 3] = ((- alpha**2 * sin2) / (sigma * delta * sin**2) - (delta - alpha**2 * sin**2) / (delta
+        #               * (sigma * sin**2)**2) * ((- alpha**2 * sin2) * sin**2 + sin2 * sigma))
+
+        dgdth[0, 0] = -(4 * r * alpha ** 2 / sigma * sin * cos - 2 * r * alpha ** 2 * sin ** 2 / sigma ** 2 * (
+                    -2 * alpha ** 2 * sin * cos)) / delta
+        dgdth[0, 3] = dgdth[3, 0] = 2 * r * alpha / delta / sigma ** 2 * (-2 * alpha ** 2 * sin * cos)
+        dgdth[1, 1] = -delta / sigma ** 2 * (-2 * alpha ** 2 * sin * cos)
+        dgdth[2, 2] = -1 / sigma ** 2 * (-2 * alpha ** 2 * sin * cos)
+        dgdth[3, 3] = ((-2 * alpha ** 2 * sin * cos) / (sigma * delta * sin ** 2)
+                       - (delta - alpha ** 2 * sin ** 2) / (delta * (sigma * sin ** 2) ** 2) * (
+                                   (-2 * alpha ** 2 * sin * cos) * sin ** 2 + 2 * sin * cos * sigma))
 
         return dgdth
 
@@ -87,17 +100,28 @@ class KerrGeodesics(KerrBlackHole):
         A = metricKerr.A_expr(r, th, alpha)
         delta = metricKerr.delta_expr(r, alpha)
 
+        sin = np.sin(th)
+
         dgdr = np.zeros(shape=(4, 4), dtype=float)
 
-        dAdr = 4 * r * (r ** 2 + alpha ** 2) - 2 * (r - 1) * alpha ** 2 * np.sin(th) ** 2
+        # dAdr = 4 * r * (r ** 2 + alpha ** 2) - 2 * (r - 1) * alpha ** 2 * sin ** 2
 
-        dgdr[0, 0] = - dAdr / (sigma * delta) + 2 * A * (r * (sigma + delta) - sigma) / (sigma * delta) ** 2
-        dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha / (sigma * delta) + 4 * r * alpha * (r * (sigma + delta) - sigma) / (
-                     sigma * delta) ** 2
-        dgdr[1, 1] = 2 * r * (sigma - delta) / sigma ** 2 - 2 / sigma
-        dgdr[2, 2] = - 2 * r / sigma ** 2
-        dgdr[3, 3] = (2 * (r - 1) / (delta * sigma) - 2 * (delta - (alpha * np.sin(th)) ** 2) * (r * (sigma + delta) -
-                      sigma) / (delta * sigma) ** 2) / np.sin(th) ** 2
+        # dgdr[0, 0] = - dAdr / (sigma * delta) + 2 * A * (r * (sigma + delta) - sigma) / (sigma * delta) ** 2
+        # dgdr[0, 3] = dgdr[3, 0] = - 2 * alpha / (sigma * delta) + 4 * r * alpha * (r * (sigma + delta) - sigma) / (
+        #              sigma * delta) ** 2
+        # dgdr[1, 1] = 2 * r * (sigma - delta) / sigma ** 2 - 2 / sigma
+        # dgdr[2, 2] = - 2 * r / sigma ** 2
+        # dgdr[3, 3] = (2 * (r - 1) / (delta * sigma) - 2 * (delta - (alpha * sin) ** 2) * (r * (sigma + delta) -
+        #               sigma) / (delta * sigma) ** 2) / sin ** 2
+
+        dgdr[0, 0] = (-(2 * r + 2 * alpha ** 2 / sigma * sin ** 2 - 2 * r * alpha ** 2 * sin ** 2 / sigma ** 2 * (2 * r))
+                      / delta +(r ** 2 + alpha ** 2 + 2 * r * alpha ** 2 * sin ** 2 / sigma) / delta ** 2 * (2 * r - 2))
+        dgdr[0, 3] = dgdr[0, 3] = -2 * alpha / sigma / delta + 2 * r * alpha / (sigma * delta) ** 2 * (
+                    sigma * (2 * r - 2) + delta * (2 * r))
+        dgdr[1, 1] = (2 * r - 2) / sigma - delta / sigma ** 2 * (2 * r)
+        dgdr[2, 2] = -1 / sigma ** 2 * (2 * r)
+        dgdr[3, 3] = (2 * r - 2) / (sigma * delta * sin ** 2) - (delta - alpha ** 2 * sin ** 2) / (
+                    sigma * delta * sin) ** 2 * (sigma * (2 * r - 2) + delta * (2 * r))
 
         return dgdr
 

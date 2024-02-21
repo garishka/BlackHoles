@@ -1,5 +1,5 @@
 import unittest
-from geodesic_integration_kerr import dual
+from math_tools import dual
 import numpy as np
 import random
 
