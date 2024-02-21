@@ -6,7 +6,8 @@ import matplotlib as mpl
 
 from plot import ll_corner
 
-a = 0.99
+a = 0.90
+th = np.pi / 2
 
 # за графиките
 preamble = [r'\usepackage[utf8]{inputenc}',
@@ -48,17 +49,17 @@ def shadow_rim(alpha, theta=np.pi/2, M=1):
     # стойностите, с които са отместени, са определени на око, така че да има по-малко прекъсване в кривите на графиката
     r_n = np.linspace(float(roots[0])+1e-7, float(roots[1])-1e-7, 800)
 
-    # пресмятане на прижелните параметри по (8.6.13) + (8.6.20) от Фролов
+    # пресмятане на прицелните параметри по (8.6.13) + (8.6.20) от Фролов
     x = - l_expr(r_n, M, a) / np.sin(theta)
     y = np.sqrt(Q_expr(r_n, M, a) - (x ** 2 - a ** 2) * (np.cos(theta)) ** 2)
 
     return x, y
 
 
-bh_analytic = shadow_rim(alpha=a, theta=np.pi/2, M=1)
+bh_analytic = shadow_rim(alpha=a, theta=th, M=1)
 
 
-bh_numerical = Image.open("/home/gerganadaskalova/PycharmProjects/pythonProject/pythonProject/kerr_numeric/numeric_kerr_rk45/test_bh_alpha0p99.png")
+bh_numerical = Image.open("/home/gerganadaskalova/PycharmProjects/pythonProject/pythonProject/kerr_numeric/numeric_kerr_rk45/test_bh_alpha0p90.png")
 bh_numerical = bh_numerical.transpose(method=Image.FLIP_LEFT_RIGHT)
 
 fig, ax = plt.subplots(figsize=(4, 4))
@@ -71,4 +72,4 @@ ax.set_aspect('equal', adjustable='datalim')
 ax.legend(facecolor="white", edgecolor="white", loc='upper right')
 ax.set_title(r"$\alpha=$"+f"{a}")
 plt.tight_layout()
-plt.savefig('check_solution_alpha0p99.pdf')
+plt.savefig('check_solution_alpha0p90.pdf')
