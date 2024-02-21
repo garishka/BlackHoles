@@ -69,7 +69,8 @@ class Observer(KerrBlackHole):
         """
         Return the perimetral radius based on the Kerr metric.
         """
-        return np.sqrt(Kerr_metric(*self.position, self.alpha)[3, 3])
+        r, th = self.position
+        return np.sqrt(Kerr_metric(r, np.pi/2, self.alpha)[3, 3])
 
     def impact_params(self, a1: Union[float, np.ndarray], a2: Union[float, np.ndarray]) -> np.ndarray:
         """
