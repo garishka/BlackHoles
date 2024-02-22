@@ -10,12 +10,12 @@ from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 100
+RES = 500
 
 # Spin parameter value
 a = 0.9
 # Declination angle
-th = np.pi/3
+th = np.pi/6
 
 # Generate a grid of angle values (δ, γ) ≡ (β, α) for the observer's viewpoint
 delta = np.linspace(0.9955 * np.pi, 1.0045 * np.pi, RES)
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     # To load array
     # data = np.load('data.npy')
 
-    image.save("test_bh_alpha0p90th60.png")
+    image.save("test_bh_alpha0p90th30.png")
