@@ -21,6 +21,7 @@ class Observer(GammaMimicker):
         return np.array(self.position)
 
     def qp_init(self, alpha: float, beta: float) -> list[float]:
+        # https://arxiv.org/pdf/1904.06207.pdf
         d, i = self.position
         g = g_cov(*self.position, self.gamma)
 
