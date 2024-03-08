@@ -10,7 +10,7 @@ from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 200
+RES = 80
 
 # Deformation parameter
 g = 1.

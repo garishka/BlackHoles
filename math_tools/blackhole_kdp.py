@@ -25,7 +25,7 @@ b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 
 RK45_ACCURACY = 1e-8        # Desired accuracy for the RK45 method
 EPSILON = 1e-16     # A small value to prevent division by zero errors
 NUM_ITER = int(1e4)      # Maximum number of iterations allowed before termination
-DELTA = 1e-3        # Delta value used for evaluating if the photon trajectory originates from the black hole
+DELTA = 1e-5        # Delta value used for evaluating if the photon trajectory originates from the black hole
 
 
 @dataclass

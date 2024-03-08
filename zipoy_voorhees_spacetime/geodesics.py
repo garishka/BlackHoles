@@ -40,15 +40,15 @@ class GammaGeodesics:
 
         dAdr = 2 * (1 - 2 / gamma / r) ** (gamma - 1) / r ** 2
         dBudr = dBldr = dDdr = 2 * (r - 1 / gamma)
-        dBdr = (gamma ** 2 - 1) * ((B_upper / B_lower) ** (gamma ** 2 - 1) / B_upper * dBudr - (B_upper / B_lower) ** (gamma ** 2) / B_upper * dBldr)
-        dCdr = gamma ** 2 * (B_upper / B_lower) ** (gamma ** 2 - 1) * dBudr - (gamma ** 2 - 1) * (B_upper / B_lower) ** gamma * dBldr
+        dBdr = (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2 - 2) * dBudr * (1 - B_upper / B_lower) / B_lower
+        dCdr = gamma ** 2 * (B_upper / B_lower) ** (gamma ** 2 - 1) * dBudr - (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2) * dBldr
 
         dgdr = np.zeros(shape=(4, ), dtype=float)
 
         dgdr[0] = - dAdr
         dgdr[1] = dBdr / A - B * dAdr / A ** 2
         dgdr[2] = dCdr / A - C * dAdr / A ** 2
-        dgdr[3] = dDdr / A - B_upper * dAdr / A ** 2
+        dgdr[3] = dDdr / A - B_upper * np.sin(theta) ** 2 * dAdr / A ** 2
 
         return dgdr
 
@@ -103,9 +103,9 @@ class GammaGeodesics:
         dzdl[3] = L / g[3, 3]
 
         dzdl[4] = 1e-16  # trying if a very small number ≠0 would be better for numerical computations
-        dzdl[5] = 0.5 * ((E / g[0, 0]) ** 2 * dgdr[0] + (p_r / g[1, 1]) ** 2 * dgdr[2] * (p_th / g[2, 2]) ** 2 *
+        dzdl[5] = 0.5 * ((E / g[0, 0]) ** 2 * dgdr[0] + (p_r / g[1, 1]) ** 2 * dgdr[1] + (p_th / g[2, 2]) ** 2 *
                          dgdr[2] + (L / g[3, 3]) ** 2 * dgdr[3])
-        dzdl[6] = 0.5 * ((p_r / g[1, 1]) ** 2 * dgdth[1] * (p_th / g[2, 2]) ** 2 * dgdth[2] + (L / g[3, 3]) ** 2 * dgdth[3])
+        dzdl[6] = 0.5 * ((p_r / g[1, 1]) ** 2 * dgdth[1] + (p_th / g[2, 2]) ** 2 * dgdth[2] + (L / g[3, 3]) ** 2 * dgdth[3])
         dzdl[7] = 1e-16
 
         return dzdl
