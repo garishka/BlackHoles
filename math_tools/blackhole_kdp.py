@@ -24,8 +24,8 @@ b5 = np.asarray([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 
 
 RK45_ACCURACY = 1e-8        # Desired accuracy for the RK45 method
 EPSILON = 1e-16     # A small value to prevent division by zero errors
-NUM_ITER = int(1e3)      # Maximum number of iterations allowed before termination
-DELTA = 1e-2        # Delta value used for evaluating if the photon trajectory originates from the black hole
+NUM_ITER = int(1e4)      # Maximum number of iterations allowed before termination
+DELTA = 1e-3        # Delta value used for evaluating if the photon trajectory originates from the black hole
 
 
 @dataclass
@@ -44,7 +44,7 @@ err = StepErrors(RK45_ACCURACY, RK45_ACCURACY, RK45_ACCURACY)
 # func(t, qp, *params)
 # init = (q0, p0)
 def RK45_mod(func: Callable, init: Union[np.ndarray, List], t_interval: Union[List, tuple], h_init: float, trajectory: bool,
-         r_plus: float, **params) -> tuple:
+             r_plus: float, **params) -> tuple:
 
     if len(params) > (len(inspect.signature(func).parameters)-2):       # -2 за компенсиране на t, y
         warnings.warn("The number of parameters given exceeds the number of positional arguments. "
@@ -54,13 +54,13 @@ def RK45_mod(func: Callable, init: Union[np.ndarray, List], t_interval: Union[Li
             raise TypeError("Check your parameter names. Something is wrong.")
 
     # щото ми омръзна от input variables
-    alpha = np.sqrt(1 - (r_plus-1) ** 2)
+    # alpha = np.sqrt(1 - (r_plus-1) ** 2)
 
     rev = bool((t_interval[0] > t_interval[-1]) or (t_interval[0] < 0))
 
     # не е вярно
     if rev:
-        t_interval = sorted(list(t_interval))       # и да е било tuple, вече не е
+        t_interval = sorted(list(t_interval))
     elif t_interval[0] == t_interval[-1]:
         warnings.warn("Check your t intervals.")
 
@@ -94,7 +94,7 @@ def RK45_mod(func: Callable, init: Union[np.ndarray, List], t_interval: Union[Li
             h *= (RK45_ACCURACY / (err.prev_err + EPSILON)) ** (-0.21 / 5)
             h *= (RK45_ACCURACY / (err.sec_prev_err + EPSILON)) ** (0.10 / 5)
 
-            if y[j, 1] > 501:
+            if y[j, 1] > init[1] + 1:
                 y = y.transpose()[:len(init)]
                 y = y[:, :np.count_nonzero(y[1])]
                 if trajectory:

@@ -15,7 +15,7 @@ def C_expr(r, theta, gamma):
 
 
 def g_cov(r, theta, gamma):
-    A = A_expr(r, theta)
+    A = A_expr(r, gamma)
     B = B_expr(r, theta, gamma)
     C = C_expr(r, theta, gamma)
 
