@@ -12,6 +12,12 @@ class Observer(GammaMimicker):
         super().__init__(gamma)
         self.position = position
 
+    def perim_r(self) -> float:
+        """
+        Return the perimetral radius.
+        """
+        return np.sqrt(g_cov(*self.position, self.gamma)[3, 3])
+
     def coord(self) -> np.ndarray:
         """
         Return the 3-position of the observer.

@@ -34,12 +34,12 @@ def solve_BH_shadow(delta_i, gamma_j):
     # Solve the geodesic equations for the current (δ, γ) ≡ (β, α) ≡ (-x/r, y/r) with given initial conditions
     logging.info(f"Processing pixel ({delta_i}, {gamma_j})")
 
-    ivp = obs.qp_zamo(alpha[delta_i], beta[gamma_j])
+    ivp = obs.qp_zamo(alpha[gamma_j], beta[delta_i])
     geo = geodesics.GammaGeodesics(gamma=g)
 
     fallen, end_values = RK45_mod(func=geo.hamilton_eqs,
                                   init=ivp,
-                                  t_interval=(-10_000, 1e-10),
+                                  t_interval=(-1e5, 1e-10),
                                   h_init=9.,
                                   r_plus=r_sing,
                                   trajectory=False)

@@ -55,11 +55,11 @@ class GammaGeodesics:
     def metric_th_deriv(self, r, theta):
         gamma = self.gamma
         A = A_expr(r, gamma)
-        B_upper = r ** 2 - 2 * r / gamma
-        B_lower = r ** 2 - 2 * r / gamma + (np.sin(theta) / gamma) ** 2
-
         sin_th = np.sin(theta)
         cos_th = np.cos(theta)
+
+        B_upper = r ** 2 - 2 * r / gamma
+        B_lower = r ** 2 - 2 * r / gamma + (sin_th / gamma) ** 2
         dBldth = 2 * sin_th * cos_th / gamma ** 2
 
         dgdth = np.zeros(shape=(4,), dtype=float)
@@ -104,7 +104,7 @@ class GammaGeodesics:
 
         dzdl[4] = 1e-16  # trying if a very small number ≠0 would be better for numerical computations
         dzdl[5] = 0.5 * ((E / g[0, 0]) ** 2 * dgdr[0] + (p_r / g[1, 1]) ** 2 * dgdr[1] + (p_th / g[2, 2]) ** 2 *
-                         dgdr[2] + (L / g[3, 3]) ** 2 * dgdr[3])
+                          dgdr[2] + (L / g[3, 3]) ** 2 * dgdr[3])
         dzdl[6] = 0.5 * ((p_r / g[1, 1]) ** 2 * dgdth[1] + (p_th / g[2, 2]) ** 2 * dgdth[2] + (L / g[3, 3]) ** 2 * dgdth[3])
         dzdl[7] = 1e-16
 

@@ -58,7 +58,6 @@ class Observer(KerrBlackHole):
         super().__init__(alpha)
         self.position = position
 
-
     def coord(self) -> np.ndarray:
         """
         Return the 3-position of the observer.
