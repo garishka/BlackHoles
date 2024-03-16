@@ -15,7 +15,7 @@ class MetricFunctions:
     g22: Callable
     g33: Callable
     g03: Callable
-    g30: Callable = g03
+    g30: Callable
 
     def metric(self):
         g = np.zeros(shape=(4, 4))
@@ -42,6 +42,8 @@ def get_g_inverse(cov_g: MetricFunctions) -> MetricFunctions:
     g_inverse.g33 = lambda state_vector, params: cov_g.g00(*state_vector, *params) / a(state_vector, params)
     g_inverse.g03 = lambda state_vector, params: - cov_g.g03(*state_vector, *params) / a(state_vector, params)
 
+    return g_inverse
+
 
 class RayTracer:
 
@@ -51,20 +53,60 @@ class RayTracer:
                  metric_params: Union[list, np.ndarray],
                  fall_cond: float,
                  cond_tolerance: float,
-                 alpha_interval: tuple,
-                 beta_interval: tuple,
+                 alpha_interval: Union[tuple, list, float],
+                 beta_interval: Union[tuple, list, float],
                  resolution: int,
                  shadow: bool,
                  trajectory: bool,
                  end_state: bool):
-    self.cov_metric = cov_metric
-    self.observer_state_vector = observer_state_vector
-    self.metric_params = metric_params
-    self.fall_cond = fall_cond
-    self.cond_tolerance = cond_tolerance
-    self.alpha_interval = alpha_interval
-    self.beta_interval = beta_interval
-    self.resolution = resolution
-    self.shadow = shadow
-    self.trajectory = trajectory
-    self.end_state = end_state
+        self.cov_metric = cov_metric
+        self.observer_state_vector = observer_state_vector
+        self.metric_params = metric_params
+        self.fall_cond = fall_cond
+        self.cond_tolerance = cond_tolerance
+        self.alpha_interval = alpha_interval
+        self.beta_interval = beta_interval
+        self.resolution = resolution
+        self.shadow = shadow
+        self.trajectory = trajectory
+        self.end_state = end_state
+
+        if self.trajectory and isinstance(self.alpha_interval, list):
+            alpha = np.array(self.alpha_interval)
+            beta = np.array(self.beta_interval)
+        else:
+            alpha = np.linspace(*self.alpha_interval, self.resolution)
+            beta = np.linspace(*self.beta_interval, self.resolution)
+
+        g_cov = self.cov_metric.metric()
+        g_contra = get_g_inverse(self.cov_metric).metric()
+
+    def initial_conditions(self, alpha, beta):
+        g = self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)
+
+        gamma = -g[0, 3] / np.sqrt(g[3, 3] * (g[0, 3] ** 2 - g[0, 0] * g[3, 3]))
+        zeta = np.sqrt(g[3, 3] / (g[0, 3] ** 2 - g[0, 0] * g[3, 3]))
+
+        sin_a = np.sin(alpha)
+        sin_b = np.sin(beta)
+        cos_a = np.cos(alpha)
+        cos_b = np.cos(beta)
+
+        qp0 = np.zeros(shape=(8,), dtype=float)
+
+        qp0[1] = self.observer_state_vector[0]
+        qp0[2] = self.observer_state_vector[1]
+
+        qp0[4] = (1 + gamma * np.sqrt(g[3, 3]) * sin_b * cos_a) / zeta
+        qp0[5] = np.sqrt(g[1, 1]) * cos_a * cos_b
+        qp0[6] = np.sqrt(g[2, 2]) * sin_a
+        qp0[7] = np.sqrt(g[3, 3]) * sin_b * cos_a
+
+        return qp0
+
+    def impact_parameters(self, alpha, beta):
+        r_perimetral = np.sqrt(self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)[3, 3])
+        return - r_perimetral * beta, r_perimetral * alpha
+
+
+
