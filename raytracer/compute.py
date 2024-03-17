@@ -2,7 +2,7 @@ import numpy as np
 from typing import Union, Callable
 from dataclasses import dataclass
 
-from math_tools import dual
+from math_tools import dual, blackhole_kdp
 
 
 @dataclass
@@ -74,7 +74,6 @@ class RayTracer:
             alpha = np.linspace(*self.alpha_interval, self.resolution)
             beta = np.linspace(*self.beta_interval, self.resolution)
 
-
     def initial_conditions(self, alpha, beta):
         g = self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)
 
@@ -131,4 +130,19 @@ class RayTracer:
         dzdl[7] = 1e-15
 
         return dzdl
+
+    def solve_shadow(self, beta_i, alpha_j):
+        fallen, trajectory = blackhole_kdp.RK45_mod(func=self.hamiltons_equations,
+                                                    init=self.initial_conditions(alpha_j, beta_i),
+                                                    t_interval=(-1e5, 1e-10),
+                                                    r_plus=self.fall_cond,
+                                                    delta_r=self.cond_tolerance,
+                                                    trajectory=True)
+
+        if self.shadow:
+            return fallen, beta_i, alpha_j
+        if self.end_state:
+            return trajectory.transpose()[-1], beta_i, alpha_j
+        if self.trajectory:
+            return trajectory, beta_i, alpha_j
 
