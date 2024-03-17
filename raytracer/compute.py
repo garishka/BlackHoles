@@ -8,8 +8,6 @@ from math_tools import dual
 @dataclass
 class MetricFunctions:
     """Non-zero components of a metric, describing an axially symmetric space-time in spherical-like coordinates."""
-    state_vector: Union[list, np.ndarray]
-    params: Union[list, np.ndarray]
     g00: Callable
     g11: Callable
     g22: Callable
@@ -17,14 +15,14 @@ class MetricFunctions:
     g03: Callable
     g30: Callable
 
-    def metric(self):
+    def metric(self, state_vec, metric_params):
         g = np.zeros(shape=(4, 4))
 
-        g[0, 0] = self.g00(*self.state_vector, *self.params)
-        g[1, 1] = self.g11(*self.state_vector, *self.params)
-        g[2, 2] = self.g22(*self.state_vector, *self.params)
-        g[3, 3] = self.g33(*self.state_vector, *self.params)
-        g[0, 3] = g[3, 0] = self.g03(*self.state_vector, *self.params)
+        g[0, 0] = self.g00(*state_vec, *metric_params)
+        g[1, 1] = self.g11(*state_vec, *metric_params)
+        g[2, 2] = self.g22(*state_vec, *metric_params)
+        g[3, 3] = self.g33(*state_vec, *metric_params)
+        g[0, 3] = g[3, 0] = self.g03(*state_vec, *metric_params)
 
         return g
 
@@ -34,8 +32,6 @@ def get_g_inverse(cov_g: MetricFunctions) -> MetricFunctions:
         return cov_g.g00(*state_vector, *params) * cov_g.g33(*state_vector, *params) - cov_g.g03(*state_vector, *params) ** 2
 
     g_inverse = MetricFunctions()
-    g_inverse.state_vector = cov_g.state_vector
-    g_inverse.params = cov_g.params
     g_inverse.g00 = lambda state_vector, params: cov_g.g33(*state_vector, *params) / a(state_vector, params)
     g_inverse.g11 = lambda state_vector, params: 1 / cov_g.g11(*state_vector, *params)
     g_inverse.g22 = lambda state_vector, params: 1 / cov_g.g22(*state_vector, *params)
@@ -78,8 +74,6 @@ class RayTracer:
             alpha = np.linspace(*self.alpha_interval, self.resolution)
             beta = np.linspace(*self.beta_interval, self.resolution)
 
-        g_cov = self.cov_metric.metric()
-        g_contra = get_g_inverse(self.cov_metric).metric()
 
     def initial_conditions(self, alpha, beta):
         g = self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)
@@ -108,5 +102,33 @@ class RayTracer:
         r_perimetral = np.sqrt(self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)[3, 3])
         return - r_perimetral * beta, r_perimetral * alpha
 
+    def hamiltons_equations(self, l: float, z: np.ndarray):
+        metric = get_g_inverse(self.cov_metric)
+        g = metric.metric(*z[1:3], *self.metric_params)
 
+        dg00dr = dual.partial_deriv(metric.g00, z[1:3], 0, self.metric_params)
+        dg11dr = dual.partial_deriv(metric.g11, z[1:3], 0, self.metric_params)
+        dg22dr = dual.partial_deriv(metric.g22, z[1:3], 0, self.metric_params)
+        dg33dr = dual.partial_deriv(metric.g33, z[1:3], 0, self.metric_params)
+        dg03dr = dual.partial_deriv(metric.g03, z[1:3], 0, self.metric_params)
+
+        dg00dth = dual.partial_deriv(metric.g00, z[1:3], 1, self.metric_params)
+        dg11dth = dual.partial_deriv(metric.g11, z[1:3], 1, self.metric_params)
+        dg22dth = dual.partial_deriv(metric.g22, z[1:3], 1, self.metric_params)
+        dg33dth = dual.partial_deriv(metric.g33, z[1:3], 1, self.metric_params)
+        dg03dth = dual.partial_deriv(metric.g03, z[1:3], 1, self.metric_params)
+
+        dzdl = np.zeros(shape=8, dtype=float)
+
+        dzdl[0] = g[0, 0] * z[4] + g[0, 3] * z[7]
+        dzdl[1] = g[1, 1] * z[5]
+        dzdl[2] = g[2, 2] * z[6]
+        dzdl[3] = g[0, 3] * z[4] + g[3, 3] * z[7]
+
+        dzdl[4] = 1e-15
+        dzdl[5] = - 0.5 * (dg00dr * z[4] ** 2 + 2 * dg03dr * z[4] * z[7] + dg11dr * z[5] ** 2 + dg22dr * z[6] ** 2 + dg33dr * z[7] ** 2)
+        dzdl[6] = - 0.5 * (dg00dth * z[4] ** 2 + 2 * dg03dth * z[4] * z[7] + dg11th * z[5] ** 2 + dg22dth * z[6] ** 2 + dg33dth * z[7] ** 2)
+        dzdl[7] = 1e-15
+
+        return dzdl
 
