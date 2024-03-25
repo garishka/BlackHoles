@@ -32,23 +32,37 @@ class GammaGeodesics:
 
     def metric_r_deriv(self, r, theta):
         gamma = self.gamma
-        A = A_expr(r, gamma)
-        B = B_expr(r, theta, gamma)
-        C = C_expr(r, theta, gamma)
-        B_upper = r ** 2 - 2 * r / gamma
-        B_lower = r ** 2 - 2 * r / gamma + (np.sin(theta) / gamma) ** 2
+        #A = A_expr(r, gamma)
+        #B = B_expr(r, theta, gamma)
+        #C = C_expr(r, theta, gamma)
+        #B_upper = r ** 2 - 2 * r / gamma
+        #B_lower = r ** 2 - 2 * r / gamma + (np.sin(theta) / gamma) ** 2
 
-        dAdr = 2 * (1 - 2 / gamma / r) ** (gamma - 1) / r ** 2
-        dBudr = dBldr = dDdr = 2 * (r - 1 / gamma)
-        dBdr = (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2 - 2) * dBudr * (1 - B_upper / B_lower) / B_lower
-        dCdr = gamma ** 2 * (B_upper / B_lower) ** (gamma ** 2 - 1) * dBudr - (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2) * dBldr
+        #dAdr = 2 * (1 - 2 / gamma / r) ** (gamma - 1) / r ** 2
+        #dBudr = dBldr = dDdr = 2 * (r - 1 / gamma)
+        #dBdr = (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2 - 2) * dBudr * (1 - B_upper / B_lower) / B_lower
+        #dCdr = gamma ** 2 * (B_upper / B_lower) ** (gamma ** 2 - 1) * dBudr - (gamma ** 2 - 1) * (B_upper / B_lower) ** (gamma ** 2) * dBldr
 
         dgdr = np.zeros(shape=(4, ), dtype=float)
 
-        dgdr[0] = - dAdr
-        dgdr[1] = dBdr / A - B * dAdr / A ** 2
-        dgdr[2] = dCdr / A - C * dAdr / A ** 2
-        dgdr[3] = dDdr / A - B_upper * np.sin(theta) ** 2 * dAdr / A ** 2
+        #dgdr[0] = - dAdr
+        #dgdr[1] = dBdr / A - B * dAdr / A ** 2
+        #dgdr[2] = dCdr / A - C * dAdr / A ** 2
+        #dgdr[3] = dDdr / A - B_upper * np.sin(theta) ** 2 * dAdr / A ** 2
+
+        dgdr[0] = -2*(1 - 2/(gamma*r))**gamma/(r**2*(1 - 2/(gamma*r)))
+        dgdr[1] = (((r**2 - 2*r/gamma)/(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2))**(gamma**2 - 1)*(gamma**2 - 1)*
+                   ((-2*r + 2/gamma)*(r**2 - 2*r/gamma)/(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)**2 + (2*r - 2/gamma)
+                   /(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2))*(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)/((1 - 2/
+                   (gamma*r))**gamma*(r**2 - 2*r/gamma)) - 2*((r**2 - 2*r/gamma)/(r**2 - 2*r/gamma +
+                   np.sin(theta)**2/gamma**2))**(gamma**2 - 1)/(r**2*(1 - 2/(gamma*r))*(1 - 2/(gamma*r))**gamma))
+        dgdr[2] = (gamma**2*(2*r - 2/gamma)*(r**2 - 2*r/gamma)**(gamma**2)*(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)**
+                   (1 - gamma**2)/((1 - 2/(gamma*r))**gamma*(r**2 - 2*r/gamma)) + (1 - gamma**2)*(2*r - 2/gamma)*
+                   (r**2 - 2*r/gamma)**(gamma**2)*(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)**(1 - gamma**2)/
+                   ((1 - 2/(gamma*r))**gamma*(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)) - 2*(r**2 - 2*r/gamma)**(gamma**2)
+                   *(r**2 - 2*r/gamma + np.sin(theta)**2/gamma**2)**(1 - gamma**2)/(r**2*(1 - 2/(gamma*r))*(1 - 2/(gamma*r))**gamma))
+        dgdr[3] = (2*r - 2/gamma)*np.sin(theta)**2/(1 - 2/(gamma*r))**gamma - 2*(r**2 - 2*r/gamma)*np.sin(theta)**2/(r**2*(1 - 2/(gamma*r))*(1 - 2/(gamma*r))**gamma)
+
 
         return dgdr
 

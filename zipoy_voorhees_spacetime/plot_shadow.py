@@ -10,10 +10,10 @@ from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 80
+RES = 500
 
 # Deformation parameter
-g = 1.
+g = 0.51
 # Declination angle
 th = np.pi / 2
 
@@ -42,6 +42,7 @@ def solve_BH_shadow(delta_i, gamma_j):
                                   t_interval=(-1e5, 1e-10),
                                   h_init=9.,
                                   r_plus=r_sing,
+                                  delta_r=1e-4,
                                   trajectory=False)
 
     return fallen, delta_i, gamma_j
@@ -74,4 +75,4 @@ if __name__ == "__main__":
     minutes, seconds = divmod(remainder, 60)
     print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
 
-    image.save("test_gamma_1.png")
+    image.save("gamma_0p51_delta_m4.png")

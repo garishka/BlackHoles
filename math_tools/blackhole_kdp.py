@@ -116,6 +116,6 @@ def RK45_mod(func: Callable, init: Union[np.ndarray, List], t_interval: Union[Li
 
     y = y.transpose()[:len(init)]
     if trajectory:
-        return True, t, y
+        return False, t, y
     else:
-        return True, y[:, -1]
+        return False, y[:, -1]

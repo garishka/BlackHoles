@@ -1,8 +1,31 @@
+import itertools
+import time
 import numpy as np
 from typing import Union, Callable
 from dataclasses import dataclass
+import matplotlib.pyplot as plt
+from PIL import Image
+import matplotlib as mpl
+from PIL import Image, ImageDraw
+import concurrent.futures
+
 
 from math_tools import dual, blackhole_kdp
+
+preamble = [r'\usepackage[utf8]{inputenc}',
+    r'\usepackage[bulgarian]{babel}',
+    r"\usepackage{amsmath}",
+    r'\usepackage{siunitx}',
+    r'\usepackage{emoji}']
+
+mpl.use("pgf")
+LaTeX = {
+"text.usetex": True,
+"font.family": "CMU Serif",
+    "pgf.preamble": "\n".join(line for line in preamble),
+    "pgf.rcfonts": True,
+    "pgf.texsystem": "lualatex"}
+plt.rcParams.update(LaTeX)
 
 
 @dataclass
@@ -47,7 +70,7 @@ class RayTracer:
                  cov_metric: MetricFunctions,
                  observer_state_vector: Union[list, np.ndarray],
                  metric_params: Union[list, np.ndarray],
-                 fall_cond: float,
+                 fall_cond: Callable,
                  cond_tolerance: float,
                  alpha_interval: Union[tuple, list, float],
                  beta_interval: Union[tuple, list, float],
@@ -68,13 +91,14 @@ class RayTracer:
         self.end_state = end_state
 
         if self.trajectory and isinstance(self.alpha_interval, list):
-            alpha = np.array(self.alpha_interval)
-            beta = np.array(self.beta_interval)
+            alpha_values = np.array(self.alpha_interval)
+            beta_values = np.array(self.beta_interval)
         else:
-            alpha = np.linspace(*self.alpha_interval, self.resolution)
-            beta = np.linspace(*self.beta_interval, self.resolution)
+            alpha_values = np.linspace(*self.alpha_interval, self.resolution)
+            beta_values = np.linspace(*self.beta_interval, self.resolution)
 
     def initial_conditions(self, alpha, beta):
+        """Initial conditions for the light rays in ZAMO frame."""
         g = self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)
 
         gamma = -g[0, 3] / np.sqrt(g[3, 3] * (g[0, 3] ** 2 - g[0, 0] * g[3, 3]))
@@ -100,6 +124,11 @@ class RayTracer:
     def impact_parameters(self, alpha, beta):
         r_perimetral = np.sqrt(self.cov_metric.metric(*self.observer_state_vector, *self.metric_params)[3, 3])
         return - r_perimetral * beta, r_perimetral * alpha
+
+    def get_edges(self):
+        """Returns coordinates of the lower left and upper right corner of the image"""
+        xll, yll, xlr, yul = self.impact_parameters(self.alpha_interval[0],self.beta_interval[0]), self.impact_parameters(self.alpha_interval[-1], self.beta_interval[-1])
+        return xll, xlr, yll, yul
 
     def hamiltons_equations(self, l: float, z: np.ndarray):
         metric = get_g_inverse(self.cov_metric)
@@ -135,7 +164,7 @@ class RayTracer:
         fallen, trajectory = blackhole_kdp.RK45_mod(func=self.hamiltons_equations,
                                                     init=self.initial_conditions(alpha_j, beta_i),
                                                     t_interval=(-1e5, 1e-10),
-                                                    r_plus=self.fall_cond,
+                                                    r_plus=self.fall_cond(*self.observer_state_vector, *self.metric_params),
                                                     delta_r=self.cond_tolerance,
                                                     trajectory=True)
 
@@ -145,4 +174,48 @@ class RayTracer:
             return trajectory.transpose()[-1], beta_i, alpha_j
         if self.trajectory:
             return trajectory, beta_i, alpha_j
+
+    def draw_shadow(self, title: str, name_file: str):
+        image = Image.new("RGB", (self.resolution, self.resolution), "white")
+        draw = ImageDraw.Draw(image)
+        pixels = image.load()
+
+        iterable = list(itertools.product(range(self.resolution), range(self.resolution)))
+        i, j = zip(*iterable)
+
+        start = time.time()
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+            # Loop through each (δ, γ) coordinate on the observer's plane
+            for fallen, delta_i, gamma_j in executor.map(self.solve_shadow, i, j):
+
+                if fallen:
+                    # The light ray falls into the black hole; set the pixel to black
+                    pixels[delta_i, gamma_j] = (0, 0, 0)
+
+        end = time.time()
+        elapsed_time_sec = end - start
+        hours, remainder = divmod(elapsed_time_sec, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
+
+        fig, ax = plt.subplots(figsize=(4, 4))
+        ax.imshow(image, extent=[*self.get_edges()])  # да напиша после границите
+        ax.set_xlabel(r'$x$, [M]')
+        ax.set_ylabel(r'$y$, [M]')
+        ax.set_aspect('equal', adjustable='datalim')
+        ax.legend(facecolor="white", edgecolor="white", loc='upper right')
+        ax.set_title(title)
+        plt.tight_layout()
+        plt.savefig(name_file)
+
+
+    def draw_trajectory(geo_solution: np.ndarray, title: str, name_file: str):
+        ax = plt.figure().add_subplot(projection='3d')
+        # да добавя как ще изглежда проекцията за наблюдател
+        ax.plot(geo_solution[1:3])      # това е грешно, просто го слагам за пълнеж
+        ax.legend(facecolor="white", edgecolor="white", loc='upper right')
+        ax.set_title(title)
+        plt.tight_layout()
+        plt.savefig(name_file)
 
