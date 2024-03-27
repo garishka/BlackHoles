@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union
 
-from zipoy_voorhees_spacetime.gamma_metric import g_cov
+from zipoy_voorhees_spacetime.gamma_metric import g_cov, gamma_infty_metric
 from zipoy_voorhees_spacetime.geodesics import GammaMimicker
 
 
@@ -16,6 +16,8 @@ class Observer(GammaMimicker):
         """
         Return the perimetral radius.
         """
+        if self.gamma == np.inf:
+            return np.sqrt(gamma_infty_metric(*self.position)[3, 3])
         return np.sqrt(g_cov(*self.position, self.gamma)[3, 3])
 
     def coord(self) -> np.ndarray:
@@ -29,7 +31,10 @@ class Observer(GammaMimicker):
     def qp_init(self, alpha: float, beta: float) -> list[float]:
         # https://arxiv.org/pdf/1904.06207.pdf
         d, i = self.position
-        g = g_cov(*self.position, self.gamma)
+        if self.gamma == np.inf:
+            g = gamma_infty_metric(*self.position)
+        else:
+            g = g_cov(*self.position, self.gamma)
 
         sin_i = np.sin(i)
         cos_i = np.cos(i)
@@ -49,15 +54,24 @@ class Observer(GammaMimicker):
         return qp0
 
     def gamma_g(self) -> float:
-        g = g_cov(*self.position, self.gamma)
+        if self.gamma == np.inf:
+            g = gamma_infty_metric(*self.position)
+        else:
+            g = g_cov(*self.position, self.gamma)
         return -g[0, 3] / np.sqrt(g[3, 3] * (g[0, 3] ** 2 - g[0, 0] * g[3, 3]))
 
     def zeta(self) -> float:
-        g = g_cov(*self.position, self.gamma)
+        if self.gamma == np.inf:
+            g = gamma_infty_metric(*self.position)
+        else:
+            g = g_cov(*self.position, self.gamma)
         return np.sqrt(g[3, 3] / (g[0, 3] ** 2 - g[0, 0] * g[3, 3]))
 
     def qp_zamo(self, alpha: float, beta: float) -> list[float]:
-        g = g_cov(*self.position, self.gamma)
+        if self.gamma == np.inf:
+            g = gamma_infty_metric(*self.position)
+        else:
+            g = g_cov(*self.position, self.gamma)
         sin_a = np.sin(alpha)
         sin_b = np.sin(beta)
         cos_a = np.cos(alpha)

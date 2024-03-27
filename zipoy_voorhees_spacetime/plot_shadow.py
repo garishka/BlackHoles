@@ -10,10 +10,10 @@ from math_tools.blackhole_kdp import RK45_mod
 from observer import Observer
 
 # Image resolution
-RES = 500
+RES = 100
 
 # Deformation parameter
-g = 0.51
+g = np.inf
 # Declination angle
 th = np.pi / 2
 
@@ -35,17 +35,17 @@ def solve_BH_shadow(delta_i, gamma_j):
     logging.info(f"Processing pixel ({delta_i}, {gamma_j})")
 
     ivp = obs.qp_zamo(alpha[gamma_j], beta[delta_i])
-    geo = geodesics.GammaGeodesics(gamma=g)
+    geo = geodesics.GammaInftyGeodesics()
 
     fallen, end_values = RK45_mod(func=geo.hamilton_eqs,
                                   init=ivp,
                                   t_interval=(-1e5, 1e-10),
                                   h_init=9.,
                                   r_plus=r_sing,
-                                  delta_r=1e-4,
+                                  delta_r=1e-2,
                                   trajectory=False)
 
-    return fallen, delta_i, gamma_j
+    return fallen, end_values, delta_i, gamma_j
 
 
 if __name__ == "__main__":
@@ -59,15 +59,19 @@ if __name__ == "__main__":
     iterable = list(itertools.product(range(RES), range(RES)))
     i, j = zip(*iterable)
 
+    #results = np.empty(shape=(RES, RES, 8))
+
     start = time.time()
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
         # Loop through each (δ, γ) coordinate on the observer's plane
-        for fallen, delta_i, gamma_j in executor.map(solve_BH_shadow, i, j):
+        for fallen, end_vals, delta_i, gamma_j in executor.map(solve_BH_shadow, i, j):
 
             if fallen:
                 # The light ray falls into the black hole; set the pixel to black
                 pixels[delta_i, gamma_j] = (0, 0, 0)
+            #else:
+            #    results[delta_i, gamma_j] = end_vals
 
     end = time.time()
     elapsed_time_sec = end - start
@@ -75,4 +79,8 @@ if __name__ == "__main__":
     minutes, seconds = divmod(remainder, 60)
     print(f"Time taken: {int(hours)}:{int(minutes)}:{seconds}")
 
-    image.save("gamma_0p51_delta_m4.png")
+    #np.save("gamma_1p0_results.npy", results)
+    # To load array
+    # data = np.load('data.npy')
+
+    image.save("gamma_infty_shadow.png")

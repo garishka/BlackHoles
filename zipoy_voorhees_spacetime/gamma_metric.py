@@ -28,3 +28,17 @@ def g_cov(r, theta, gamma):
 
     return g
 
+
+def gamma_infty_metric(r, theta):
+    sin_th = np.sin(theta)
+    a = np.exp(- 2 / r)
+    b = np.exp(- sin_th ** 2 / r ** 2)
+
+    g = np.zeros(shape=(4, 4), dtype=float)
+
+    g[0, 0] = - a
+    g[1, 1] = b / a
+    g[2, 2] = r ** 2 / a
+    g[3, 3] = (r * sin_th) ** 2 / a
+
+    return g
