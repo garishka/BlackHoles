@@ -99,7 +99,7 @@ def map_angle_to_pixel(theta: float, phi: float, resolution: int, intervals: Uni
     return closest_index.tolist()
 
 
-def map_celestial(angles: tuple, obs_r: float, cs_r: float):
+def map_celestial(angles: Union[tuple, np.ndarray], obs_r: float, cs_r: float):
     # Cunha, p.121
     th, phi = angles
     r = np.sqrt(obs_r ** 2 + cs_r ** 2 - 2 * obs_r * cs_r * np.sin(th) * np.cos(phi))
